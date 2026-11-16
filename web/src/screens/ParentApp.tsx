@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { api, friendlyError } from "../api";
@@ -72,7 +72,7 @@ export function ParentPin({ onSession, onCancel }: { onSession: (id: string, exp
     <div className="screen no-tabs center">
       <h1>Enter your PIN</h1>
       <ErrorBox message={error} />
-      <PinPad onComplete={submit} disabled={busy} />
+      <PinPad onComplete={submit} busy={busy} />
       <button className="btn btn-ghost" onClick={onCancel}>Back</button>
     </div>
   );
@@ -100,10 +100,10 @@ export function ParentApp(props: {
   }
 
   const tabs: { id: PTab; icon: string; label: string }[] = [
-    { id: "overview", icon: "📊", label: "Overview" },
-    { id: "approvals", icon: "✅", label: "Approvals" },
-    { id: "children", icon: "👧", label: "Children" },
-    { id: "settings", icon: "⚙️", label: "Settings" },
+    { id: "overview", icon: "ðŸ“Š", label: "Overview" },
+    { id: "approvals", icon: "âœ…", label: "Approvals" },
+    { id: "children", icon: "ðŸ‘§", label: "Children" },
+    { id: "settings", icon: "âš™ï¸", label: "Settings" },
   ];
 
   return (
@@ -142,13 +142,13 @@ function Overview({ children, approvals, onApprovals }: { children: Child[]; app
           <span style={{ fontSize: 36 }} aria-hidden="true">{avatarEmoji(c.avatarId)}</span>
           <div className="stack" style={{ gap: 2, flex: 1 }}>
             <h3>{c.nickname}</h3>
-            <span className="small muted">Age group {c.ageGroup} · {c.difficulty}</span>
+            <span className="small muted">Age group {c.ageGroup} Â· {c.difficulty}</span>
           </div>
           <div className="stack" style={{ gap: 2, alignItems: "flex-end" }}>
-            <span>⭐ {c.totals?.stars ?? 0}</span>
+            <span>â­ {c.totals?.stars ?? 0}</span>
             {(approvals[c.id]?.length ?? 0) > 0 && (
               <button className="status pending" style={{ border: "none", cursor: "pointer" }} onClick={onApprovals}>
-                ⏳ {approvals[c.id].length} to check
+                â³ {approvals[c.id].length} to check
               </button>
             )}
           </div>
@@ -191,7 +191,7 @@ function Approvals(props: {
     <div className="screen">
       <h1>Approvals</h1>
       <ErrorBox message={error} />
-      {!any && <div className="gentle-box">Nothing waiting. 🌿</div>}
+      {!any && <div className="gentle-box">Nothing waiting. ðŸŒ¿</div>}
       {props.children.map((c) => {
         const list = props.approvals[c.id] ?? [];
         if (list.length === 0) return null;
@@ -209,7 +209,7 @@ function Approvals(props: {
               <div key={a.id} className="card stack">
                 <div className="row between">
                   <strong>{a.activityTitleSnapshot?.en}</strong>
-                  <span className="small">⭐ {a.stars}</span>
+                  <span className="small">â­ {a.stars}</span>
                 </div>
                 <span className="small muted">{a.dayKey}</span>
                 <div className="row">
@@ -241,7 +241,7 @@ function ChildrenAdmin(props: { children: Child[]; sessionId: string; guarded: <
         <button key={c.id} className="task" onClick={() => setEditing(c)}>
           <span className="pic" style={{ background: "var(--mint)" }} aria-hidden="true">{avatarEmoji(c.avatarId)}</span>
           <span className="title">{c.nickname}</span>
-          <span className="small muted">Age {c.ageGroup} ›</span>
+          <span className="small muted">Age {c.ageGroup} â€º</span>
         </button>
       ))}
       <button className="btn btn-primary btn-block" onClick={() => setAdding(true)}>
@@ -287,7 +287,7 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
 
   return (
     <div className="screen">
-      <button className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={props.onDone}>← Back</button>
+      <button className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={props.onDone}>â† Back</button>
       <h1>{avatarEmoji(c.avatarId)} {c.nickname}</h1>
       <div className="field">
         <label>Age group</label>

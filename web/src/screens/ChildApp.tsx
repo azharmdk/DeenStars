@@ -7,6 +7,7 @@ import { Activity, avatarEmoji, CATEGORY_INFO, Category, Child, Completion } fro
 import { greetingForHour, isFridayDayKey } from "../time";
 import { PlayTab } from "./Play";
 import { DuaCorner } from "./DuaCorner";
+import { testerToolsEnabled } from "../devFlags";
 
 type Tab = "home" | "checklist" | "play" | "stars" | "me";
 type Sub = null | "jummah" | "duas";
@@ -16,7 +17,7 @@ const SIM_FRIDAY_KEY = "ds_sim_friday";
 export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () => void }) {
   const [tab, setTab] = useState<Tab>("home");
   const [sub, setSub] = useState<Sub>(null);
-  const [simFriday, setSimFriday] = useState(() => localStorage.getItem(SIM_FRIDAY_KEY) === "1");
+  const [simFriday, setSimFriday] = useState(() => testerToolsEnabled && localStorage.getItem(SIM_FRIDAY_KEY) === "1");
   const { dayKey, weekKey, now } = useToday(child);
   const friday = isFridayDayKey(dayKey) || simFriday;
   const { activities, error } = useActivities();
@@ -247,13 +248,13 @@ function ChecklistTab(props: {
           🌙 Open the Jummah checklist
         </button>
       )}
-      <div className="grid3">
-        <button className="tile" aria-pressed={cat === "all"} style={{ background: "#fff", minHeight: 80 }} onClick={() => setCat("all")}>
-          <span className="icon" aria-hidden="true">✨</span>All
+      <div className="filter-row" role="group" aria-label="Show category">
+        <button className="filter-pill" aria-pressed={cat === "all"} style={{ background: "#fff" }} onClick={() => setCat("all")}>
+          <span aria-hidden="true">✨</span>All
         </button>
         {cats.map((c) => (
-          <button key={c} className="tile" aria-pressed={cat === c} style={{ background: CATEGORY_INFO[c].color, minHeight: 80 }} onClick={() => setCat(c)}>
-            <span className="icon" aria-hidden="true">{CATEGORY_INFO[c].emoji}</span>
+          <button key={c} className="filter-pill" aria-pressed={cat === c} style={{ background: CATEGORY_INFO[c].color }} onClick={() => setCat(c)}>
+            <span aria-hidden="true">{CATEGORY_INFO[c].emoji}</span>
             {CATEGORY_INFO[c].label}
           </button>
         ))}
@@ -429,13 +430,15 @@ function MeTab(props: {
       <button className="btn btn-secondary btn-child" onClick={props.onDuas}>
         🤲 My Duas
       </button>
-      <div className="card stack">
-        <h3>Tester tools</h3>
-        <label className="row" style={{ cursor: "pointer" }}>
-          <input type="checkbox" checked={props.simFriday} onChange={(e) => props.onSimFriday(e.target.checked)} style={{ width: 24, height: 24 }} />
-          <span>Pretend today is Friday (to test Jummah)</span>
-        </label>
-      </div>
+      {testerToolsEnabled && (
+        <div className="card stack">
+          <h3>Tester tools</h3>
+          <label className="row" style={{ cursor: "pointer" }}>
+            <input type="checkbox" checked={props.simFriday} onChange={(e) => props.onSimFriday(e.target.checked)} style={{ width: 24, height: 24 }} />
+            <span>Pretend today is Friday (to test Jummah)</span>
+          </label>
+        </div>
+      )}
       <button className="btn btn-ghost" style={{ marginTop: "auto" }} onClick={props.onGrownUps}>
         👤 Grown-ups
       </button>

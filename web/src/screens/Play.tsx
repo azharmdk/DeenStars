@@ -83,7 +83,7 @@ export function PlayTab({ child, onCelebrate }: { child: Child; onCelebrate: (te
   const soon = [
     { emoji: "🤲", title: "Dua Matching" },
     { emoji: "🕌", title: "Build the Masjid" },
-    { emoji: "ا", title: "Arabic Letters" },
+    { emoji: "أ ب", title: "Arabic Letters", arabic: true },
     { emoji: "📚", title: "Story Sequence" },
     { emoji: "🖐️", title: "Five Pillars" },
   ];
@@ -99,7 +99,11 @@ export function PlayTab({ child, onCelebrate }: { child: Child; onCelebrate: (te
         </button>
         {soon.map((s) => (
           <div key={s.title} className="tile" style={{ background: "#fff", opacity: 0.6, cursor: "default" }}>
-            <span className="icon" aria-hidden="true">{s.emoji}</span>
+            {"arabic" in s ? (
+              <span className="icon arabic-icon" aria-hidden="true" lang="ar" dir="rtl">{s.emoji}</span>
+            ) : (
+              <span className="icon" aria-hidden="true">{s.emoji}</span>
+            )}
             {s.title}
             <span className="small muted">Coming soon</span>
           </div>

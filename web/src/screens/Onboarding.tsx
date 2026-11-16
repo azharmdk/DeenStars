@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+﻿import { FormEvent, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -96,7 +96,7 @@ export function AuthScreen({ mode, onBack }: { mode: "register" | "login"; onBac
   return (
     <form className="screen no-tabs" onSubmit={submit}>
       <button type="button" className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={onBack}>
-        ← Back
+        â† Back
       </button>
       <h1>{current === "register" ? "Create a parent account" : "Welcome back"}</h1>
       <p className="muted">For parents and guardians. Children do not need their own account.</p>
@@ -120,7 +120,7 @@ export function AuthScreen({ mode, onBack }: { mode: "register" | "login"; onBac
       <ErrorBox message={error} />
       {info && <div className="gentle-box" role="status">{info}</div>}
       <button className="btn btn-primary btn-block" disabled={busy}>
-        {busy ? "Please wait…" : current === "register" ? "Create account" : "Sign in"}
+        {busy ? "Please waitâ€¦" : current === "register" ? "Create account" : "Sign in"}
       </button>
       {current === "login" && (
         <button type="button" className="btn btn-ghost" onClick={reset}>
@@ -141,6 +141,10 @@ export function ConsentScreen() {
   const [error, setError] = useState<string | null>(null);
 
   async function agree() {
+    if (!checked) {
+      setError("Please tick the box to confirm you are the parent or legal guardian.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -153,10 +157,10 @@ export function ConsentScreen() {
   }
 
   const items = [
-    { icon: "📋", title: "What we collect", text: "Your email, and for each child a nickname, birth month and year, avatar, and learning progress." },
-    { icon: "👨‍👩‍👧", title: "Who can see it", text: "Only you. Children's details are never public." },
-    { icon: "🚫", title: "What we never do", text: "No ads, no chat between children, no location, no selling data." },
-    { icon: "🗑️", title: "Your control", text: "You can delete a child's profile and all of its data at any time." },
+    { icon: "ðŸ“‹", title: "What we collect", text: "Your email, and for each child a nickname, birth month and year, avatar, and learning progress." },
+    { icon: "ðŸ‘¨â€ðŸ‘©â€ðŸ‘§", title: "Who can see it", text: "Only you. Children's details are never public." },
+    { icon: "ðŸš«", title: "What we never do", text: "No ads, no chat between children, no location, no selling data." },
+    { icon: "ðŸ—‘ï¸", title: "Your control", text: "You can delete a child's profile and all of its data at any time." },
   ];
 
   return (
@@ -176,12 +180,20 @@ export function ConsentScreen() {
         Prototype note: this is a test build. Please use made-up nicknames only, not your child's real name.
       </div>
       <label className="row" style={{ cursor: "pointer" }}>
-        <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} style={{ width: 26, height: 26 }} />
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => {
+            setChecked(e.target.checked);
+            setError(null);
+          }}
+          style={{ width: 26, height: 26 }}
+        />
         <span>I am the parent or legal guardian of the children I will add.</span>
       </label>
       <ErrorBox message={error} />
-      <button className="btn btn-primary btn-block" disabled={!checked || busy} onClick={agree}>
-        Agree and continue
+      <button className="btn btn-primary btn-block" disabled={busy} onClick={agree}>
+        {busy ? "Saving…" : "Agree and continue"}
       </button>
       <button className="btn btn-ghost" onClick={() => signOut(auth)}>
         Sign out
@@ -222,7 +234,7 @@ export function SetPinScreen() {
       <h1>{first ? "Enter the PIN again" : "Set a parent PIN"}</h1>
       <p className="muted">You'll use this 4-digit PIN to open the grown-ups area and approve activities.</p>
       <ErrorBox message={error} />
-      <PinPad key={first ? "confirm" : "first"} onComplete={onComplete} disabled={busy} />
+      <PinPad key={first ? "confirm" : "first"} onComplete={onComplete} busy={busy} />
     </div>
   );
 }
@@ -285,7 +297,7 @@ export function ChildForm({ onDone, onCancel, first }: { onDone: () => void; onC
     <form className="screen no-tabs" onSubmit={save}>
       {onCancel && (
         <button type="button" className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={onCancel}>
-          ← Back
+          â† Back
         </button>
       )}
       <h1>{first ? "Add your first child" : "Add a child"}</h1>
@@ -342,7 +354,7 @@ export function ChildForm({ onDone, onCancel, first }: { onDone: () => void; onC
       </div>
       <ErrorBox message={error} />
       <button className="btn btn-primary btn-block" disabled={busy}>
-        {busy ? "Saving…" : "Save and continue"}
+        {busy ? "Savingâ€¦" : "Save and continue"}
       </button>
     </form>
   );
