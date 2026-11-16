@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { z } from "zod";
-import { callableOptions, db } from "./lib/env";
+import { callableOptions, db, DEV_ALLOW_JUMMAH_ANY_DAY } from "./lib/env";
 import { loadOwnedChild, parseInput, requireAuth, requireParentSession } from "./lib/guards";
 import { applyStarAward, loadRewardsConfig } from "./lib/rewards";
 import { dayKeyFor, isFridayDayKey } from "./lib/time";
@@ -35,7 +35,7 @@ export const completeActivity = onCall(callableOptions, async (request) => {
 
   const now = new Date();
   const dayKey = dayKeyFor(now, child.timeZone);
-  if (activity.frequency === "jummahOnly" && !isFridayDayKey(dayKey)) {
+  if (activity.frequency === "jummahOnly" && !isFridayDayKey(dayKey) && !DEV_ALLOW_JUMMAH_ANY_DAY) {
     throw new HttpsError("failed-precondition", "This activity is available on Fridays.");
   }
 
