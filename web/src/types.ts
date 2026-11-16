@@ -45,27 +45,13 @@ export interface Approval {
   stars: number;
 }
 
-export const CATEGORY_INFO: Record<Category, { label: string; emoji: string; color: string }> = {
-  dailyHabit: { label: "Habits", emoji: "🌱", color: "var(--mint)" },
-  salah: { label: "Salah", emoji: "🕌", color: "var(--sky-soft)" },
-  quran: { label: "Quran", emoji: "📖", color: "var(--lavender-soft)" },
-  dua: { label: "Duas", emoji: "🤲", color: "var(--gold-soft)" },
-  manners: { label: "Manners", emoji: "💛", color: "var(--coral-soft)" },
-  goodDeed: { label: "Good Deeds", emoji: "🌟", color: "var(--gold-soft)" },
-  jummah: { label: "Jummah", emoji: "🌙", color: "var(--sky-soft)" },
+export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
+  gentle: "Gentle",
+  standard: "Standard",
+  challenge: "Challenge",
 };
 
-export const AVATARS: { id: string; emoji: string; label: string }[] = [
-  { id: "star", emoji: "⭐", label: "Star" },
-  { id: "moon", emoji: "🌙", label: "Moon" },
-  { id: "lantern", emoji: "🏮", label: "Lantern" },
-  { id: "camel", emoji: "🐪", label: "Camel" },
-  { id: "cat", emoji: "🐱", label: "Cat" },
-  { id: "palm", emoji: "🌴", label: "Palm tree" },
-  { id: "rainbow", emoji: "🌈", label: "Rainbow" },
-  { id: "flower", emoji: "🌸", label: "Flower" },
-];
-
-export function avatarEmoji(id: string): string {
-  return AVATARS.find((a) => a.id === id)?.emoji ?? "⭐";
+/** Removes the "(sample)" suffix from placeholder titles for display; the test banner says it once. */
+export function displayTitle(title: string): string {
+  return title.replace(/\s*\(sample\)\s*$/i, "");
 }

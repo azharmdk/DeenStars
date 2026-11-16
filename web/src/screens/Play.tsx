@@ -1,6 +1,27 @@
 import { useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  CircleHelp,
+  Gift,
+  Hand,
+  HandHeart,
+  Lamp,
+  Landmark,
+  Layers,
+  Library,
+  Moon,
+  Puzzle,
+  Shapes,
+  Star,
+  ToyBrick,
+  TreePalm,
+  Users,
+  Volume2,
+  X,
+} from "lucide-react";
 import { Child } from "../types";
-import { speak } from "../components/common";
+import { BackLink, speak } from "../components/common";
 
 /**
  * Play & Learn UI prototype. Quiz questions are SAMPLE manners scenarios, not reviewed content,
@@ -10,55 +31,35 @@ import { speak } from "../components/common";
 
 interface Q {
   prompt: string;
-  emoji: string;
-  options: { text: string; emoji: string; correct?: boolean }[];
+  Icon: LucideIcon;
+  options: { text: string; correct?: boolean }[];
   explanation: string;
 }
 
 const SAMPLE_QUIZ: Q[] = [
   {
     prompt: "Your friend dropped their crayons. What is a kind thing to do?",
-    emoji: "🖍️",
-    options: [
-      { text: "Help pick them up", emoji: "🤝", correct: true },
-      { text: "Walk away", emoji: "🚶" },
-      { text: "Laugh", emoji: "😆" },
-      { text: "Take one", emoji: "✋" },
-    ],
-    explanation: "Helping others is kind. It makes everyone happy.",
+    Icon: HandHeart,
+    options: [{ text: "Help pick them up", correct: true }, { text: "Walk away" }, { text: "Laugh at them" }, { text: "Take one" }],
+    explanation: "Helping others is kind, and it makes everyone happy.",
   },
   {
     prompt: "Someone gives you a present. What can you say?",
-    emoji: "🎁",
-    options: [
-      { text: "Thank you!", emoji: "😊", correct: true },
-      { text: "Nothing", emoji: "😶" },
-      { text: "I want more", emoji: "🙄" },
-      { text: "Go away", emoji: "🙅" },
-    ],
+    Icon: Gift,
+    options: [{ text: "Thank you!", correct: true }, { text: "Nothing" }, { text: "I want more" }, { text: "Go away" }],
     explanation: "Saying thank you shows we are grateful.",
   },
   {
     prompt: "You finished playing with your toys. What should you do?",
-    emoji: "🧸",
-    options: [
-      { text: "Put them away", emoji: "📦", correct: true },
-      { text: "Leave them everywhere", emoji: "🌪️" },
-      { text: "Hide them", emoji: "🙈" },
-      { text: "Throw them", emoji: "💥" },
-    ],
+    Icon: ToyBrick,
+    options: [{ text: "Put them away", correct: true }, { text: "Leave them everywhere" }, { text: "Hide them" }, { text: "Throw them" }],
     explanation: "Tidying up helps our family and keeps our home nice.",
   },
   {
     prompt: "Your little brother wants to play too. What can you do?",
-    emoji: "🧩",
-    options: [
-      { text: "Share and play together", emoji: "🤗", correct: true },
-      { text: "Say no", emoji: "🚫" },
-      { text: "Run away", emoji: "🏃" },
-      { text: "Shout", emoji: "📢" },
-    ],
-    explanation: "Sharing is caring. Playing together is more fun.",
+    Icon: Users,
+    options: [{ text: "Share and play together", correct: true }, { text: "Say no" }, { text: "Run away" }, { text: "Shout" }],
+    explanation: "Sharing is caring, and playing together is more fun.",
   },
 ];
 
@@ -75,37 +76,57 @@ function shuffle<T>(items: T[]): T[] {
   return a;
 }
 
+const SOON: { title: string; Icon?: LucideIcon; arabic?: string; fg: string; bg: string }[] = [
+  { title: "Dua Matching", Icon: HandHeart, fg: "var(--c-dua)", bg: "var(--c-dua-bg)" },
+  { title: "Build the Masjid", Icon: Landmark, fg: "var(--c-salah)", bg: "var(--c-salah-bg)" },
+  { title: "Arabic Letters", arabic: "أ ب", fg: "var(--c-habit)", bg: "var(--c-habit-bg)" },
+  { title: "Story Sequence", Icon: Library, fg: "var(--c-manners)", bg: "var(--c-manners-bg)" },
+  { title: "Five Pillars", Icon: Hand, fg: "var(--c-deed)", bg: "var(--c-deed-bg)" },
+];
+
 export function PlayTab({ child, onCelebrate }: { child: Child; onCelebrate: (text: string) => void }) {
   const [mode, setMode] = useState<"menu" | "quiz" | "match">("menu");
   if (mode === "quiz") return <Quiz child={child} onExit={() => setMode("menu")} onCelebrate={onCelebrate} />;
   if (mode === "match") return <MatchGame child={child} onExit={() => setMode("menu")} onCelebrate={onCelebrate} />;
 
-  const soon = [
-    { emoji: "🤲", title: "Dua Matching" },
-    { emoji: "🕌", title: "Build the Masjid" },
-    { emoji: "أ ب", title: "Arabic Letters", arabic: true },
-    { emoji: "📚", title: "Story Sequence" },
-    { emoji: "🖐️", title: "Five Pillars" },
-  ];
   return (
     <div className="screen">
       <h1>Play & Learn</h1>
       <div className="grid2">
-        <button className="tile" style={{ background: "var(--lavender-soft)" }} onClick={() => setMode("quiz")}>
-          <span className="icon" aria-hidden="true">❓</span>Kindness Quiz
+        <button className="tile" onClick={() => setMode("quiz")}>
+          <span className="icon-chip" style={{ background: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
+            <CircleHelp size={22} />
+          </span>
+          <span className="stack" style={{ gap: 2 }}>
+            Kindness Quiz
+            <span className="sub">4 questions</span>
+          </span>
         </button>
-        <button className="tile" style={{ background: "var(--sky-soft)" }} onClick={() => setMode("match")}>
-          <span className="icon" aria-hidden="true">🃏</span>Picture Matching
+        <button className="tile" onClick={() => setMode("match")}>
+          <span className="icon-chip" style={{ background: "var(--c-salah-bg)", color: "var(--c-salah)" }} aria-hidden="true">
+            <Layers size={22} />
+          </span>
+          <span className="stack" style={{ gap: 2 }}>
+            Picture Matching
+            <span className="sub">Memory game</span>
+          </span>
         </button>
-        {soon.map((s) => (
-          <div key={s.title} className="tile" style={{ background: "#fff", opacity: 0.6, cursor: "default" }}>
-            {"arabic" in s ? (
-              <span className="icon arabic-icon" aria-hidden="true" lang="ar" dir="rtl">{s.emoji}</span>
-            ) : (
-              <span className="icon" aria-hidden="true">{s.emoji}</span>
-            )}
-            {s.title}
-            <span className="small muted">Coming soon</span>
+      </div>
+      <span className="section-title">Coming soon</span>
+      <div className="grid2">
+        {SOON.map((s) => (
+          <div key={s.title} className="tile disabled" aria-disabled="true">
+            <span className="icon-chip" style={{ background: s.bg, color: s.fg }} aria-hidden="true">
+              {s.arabic ? (
+                <span className="arabic" dir="rtl" lang="ar" style={{ fontSize: 19, fontWeight: 700 }}>{s.arabic}</span>
+              ) : s.Icon ? (
+                <s.Icon size={22} />
+              ) : null}
+            </span>
+            <span className="stack" style={{ gap: 2 }}>
+              {s.title}
+              <span className="sub">Coming soon</span>
+            </span>
           </div>
         ))}
       </div>
@@ -130,40 +151,54 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
 
   if (finished) {
     return (
-      <div className="screen center">
-        <span style={{ fontSize: 80 }} aria-hidden="true">🎉</span>
+      <div className="screen center" style={{ gap: 16 }}>
+        <span className="icon-chip lg" style={{ width: 88, height: 88, borderRadius: 28, background: "var(--accent-soft)", color: "var(--accent)" }} aria-hidden="true">
+          <Star size={44} fill="currentColor" />
+        </span>
         <h1>You learned {questions.length} new things!</h1>
-        <p className="muted small">Sample quiz. Quiz stars will come with the real question bank.</p>
+        <p className="muted small">Sample quiz. Quiz stars will come with the reviewed question bank.</p>
         <button className="btn btn-primary btn-child" onClick={() => { setI(0); setPicked(null); setFinished(false); }}>
           Play again
         </button>
-        <button className="btn btn-ghost" onClick={onExit}>Back</button>
+        <button className="btn btn-ghost" onClick={onExit}>Back to Play & Learn</button>
       </div>
     );
   }
 
   const answered = picked !== null;
   const right = answered && q.options[picked!].correct;
+  const letters = ["A", "B", "C", "D"];
 
   return (
     <div className="screen">
       <div className="row between">
-        <button className="btn btn-ghost" style={{ padding: 0 }} onClick={onExit} aria-label="Close quiz">✕</button>
+        <button className="icon-btn" onClick={onExit} aria-label="Close quiz"><X size={20} aria-hidden="true" /></button>
         <div className="dots" aria-label={`Question ${i + 1} of ${questions.length}`}>
           {questions.map((_, k) => <span key={k} className={k <= i ? "on" : ""} />)}
         </div>
-        <button className="btn btn-secondary" style={{ minWidth: 56 }} onClick={() => speak(q.prompt)} aria-label="Read the question">🔊</button>
+        <button className="icon-btn" onClick={() => speak(q.prompt)} aria-label="Read the question"><Volume2 size={20} aria-hidden="true" /></button>
       </div>
-      <div className="big-pic" style={{ background: "var(--lavender-soft)" }} aria-hidden="true">{q.emoji}</div>
-      <h2>{q.prompt}</h2>
+      <div className="feature-panel" style={{ backgroundColor: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
+        <q.Icon size={60} strokeWidth={1.6} />
+      </div>
+      <span className="eyebrow">Question {i + 1} of {questions.length}</span>
+      <h2 style={{ marginTop: -8 }}>{q.prompt}</h2>
       <div className="stack">
         {q.options.map((o, k) => {
           let cls = "option";
           if (answered && o.correct) cls += " correct";
           else if (answered && k === picked) cls += " gentle";
           return (
-            <button key={o.text} className={cls} disabled={answered} onClick={() => { setPicked(k); if (q.options[k].correct) speak("Yes! Well done!"); else speak("Good try! Let's learn together."); }}>
-              <span style={{ fontSize: 30 }} aria-hidden="true">{o.emoji}</span>
+            <button
+              key={o.text}
+              className={cls}
+              disabled={answered}
+              onClick={() => {
+                setPicked(k);
+                speak(q.options[k].correct ? "Yes! Well done!" : "Good try! Let's learn together.");
+              }}
+            >
+              <span className="letter" aria-hidden="true">{letters[k]}</span>
               {o.text}
             </button>
           );
@@ -171,16 +206,16 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
       </div>
       {answered && (
         <div className="card stack" role="status">
-          <h3>{right ? "⭐ Yes! Well done!" : "Good try! Let's learn together."}</h3>
-          <p>{q.explanation}</p>
+          <h3>{right ? "Yes, well done!" : "Good try! Let's learn together."}</h3>
+          <p className="muted">{q.explanation}</p>
           <button
             className="btn btn-primary btn-child"
             onClick={() => {
               if (i + 1 < questions.length) { setI(i + 1); setPicked(null); }
-              else { setFinished(true); onCelebrate("Quiz complete!"); }
+              else { setFinished(true); onCelebrate("Quiz complete"); }
             }}
           >
-            {i + 1 < questions.length ? "Next" : "Finish"}
+            {i + 1 < questions.length ? "Next question" : "Finish"}
           </button>
         </div>
       )}
@@ -188,13 +223,13 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
   );
 }
 
-const PICTURES = [
-  { id: "masjid", emoji: "🕌", label: "Masjid" },
-  { id: "moon", emoji: "🌙", label: "Crescent moon" },
-  { id: "lantern", emoji: "🏮", label: "Lantern" },
-  { id: "dates", emoji: "🌴", label: "Date palm" },
-  { id: "star", emoji: "⭐", label: "Star" },
-  { id: "book", emoji: "📖", label: "Book" },
+const PICTURES: { id: string; label: string; Icon: LucideIcon; fg: string }[] = [
+  { id: "masjid", label: "Masjid", Icon: Landmark, fg: "var(--c-salah)" },
+  { id: "moon", label: "Crescent moon", Icon: Moon, fg: "var(--c-jummah)" },
+  { id: "lantern", label: "Lantern", Icon: Lamp, fg: "var(--c-dua)" },
+  { id: "palm", label: "Date palm", Icon: TreePalm, fg: "var(--c-habit)" },
+  { id: "star", label: "Star", Icon: Star, fg: "var(--accent)" },
+  { id: "book", label: "Book", Icon: BookOpen, fg: "var(--c-quran)" },
 ];
 
 function MatchGame({ child, onExit, onCelebrate }: { child: Child; onExit: () => void; onCelebrate: (t: string) => void }) {
@@ -233,29 +268,32 @@ function MatchGame({ child, onExit, onCelebrate }: { child: Child; onExit: () =>
   return (
     <div className="screen">
       <div className="row between">
-        <button className="btn btn-ghost" style={{ padding: 0 }} onClick={onExit}>← Back</button>
-        <span className="muted">{matched.length} of {pairs} pairs</span>
+        <BackLink onClick={onExit} />
+        <span className="muted small strong">{matched.length} of {pairs} pairs</span>
       </div>
-      <h2>Find the matching pictures</h2>
+      <div className="stack" style={{ gap: 4 }}>
+        <h1>Picture Matching</h1>
+        <p className="muted">Find the two cards that match.</p>
+      </div>
       <div className="grid3">
         {cards.map((c) => {
-          const show = flipped.includes(c.key) || matched.includes(c.id);
+          const isMatched = matched.includes(c.id);
+          const show = flipped.includes(c.key) || isMatched;
           return (
             <button
               key={c.key}
-              className="tile"
-              style={{ background: show ? "#fff" : "var(--emerald)", fontSize: 40, minHeight: 90 }}
+              className={`memory-card ${isMatched ? "matched" : show ? "shown" : "hidden"}`}
               aria-label={show ? c.label : "Hidden card"}
               onClick={() => flip(c)}
             >
-              <span aria-hidden="true">{show ? c.emoji : "✦"}</span>
+              {show ? <c.Icon size={40} color={c.fg} strokeWidth={1.8} aria-hidden="true" /> : <Shapes size={26} color="rgba(255,255,255,0.55)" aria-hidden="true" />}
             </button>
           );
         })}
       </div>
       {done && (
         <button className="btn btn-primary btn-child" onClick={() => { setMatched([]); setFlipped([]); setRound(round + 1); }}>
-          Play again
+          <Puzzle size={20} aria-hidden="true" /> Play again
         </button>
       )}
     </div>

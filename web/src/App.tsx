@@ -3,11 +3,12 @@ import { signOut } from "firebase/auth";
 import { auth, usingEmulators } from "./firebase";
 import { useAuthUser, useChildren, useParentDoc } from "./data";
 import { Loading, PrototypeBanner } from "./components/common";
-import { Mascot } from "./components/Mascot";
+import { Lock } from "lucide-react";
+import { Avatar, BrandMark } from "./components/icons";
 import { AuthScreen, ChildForm, ConsentScreen, SetPinScreen, Welcome } from "./screens/Onboarding";
 import { ChildApp } from "./screens/ChildApp";
 import { ParentApp, ParentGate, ParentPin } from "./screens/ParentApp";
-import { avatarEmoji, Child } from "./types";
+import type { Child } from "./types";
 
 type Mode =
   | { kind: "picker" }
@@ -22,7 +23,7 @@ export default function App() {
   return (
     <div className="app">
       <PrototypeBanner />
-      {usingEmulators && <div className="proto-banner" style={{ background: "var(--gold-soft)" }}>Emulator mode</div>}
+      {usingEmulators && <div className="proto-banner" style={{ background: "var(--accent-soft)" }}>Emulator mode</div>}
       <Root />
     </div>
   );
@@ -103,21 +104,30 @@ function SignedIn({ uid }: { uid: string }) {
 function Picker({ children, onPick, onGrownUps }: { children: Child[]; onPick: (c: Child) => void; onGrownUps: () => void }) {
   return (
     <div className="screen no-tabs">
-      <div className="stack center">
-        <Mascot size={90} />
+      <div className="stack center" style={{ gap: 12, marginTop: 16 }}>
+        <BrandMark size={64} />
         <h1>Who is learning today?</h1>
       </div>
-      <div className="grid2">
+      <div className="grid2" style={{ marginTop: 8 }}>
         {children.map((c) => (
-          <button key={c.id} className="tile" style={{ background: "#fff", minHeight: 140 }} onClick={() => onPick(c)}>
-            <span style={{ fontSize: 56 }} aria-hidden="true">{avatarEmoji(c.avatarId)}</span>
-            <span style={{ fontSize: 20 }}>{c.nickname}</span>
+          <button
+            key={c.id}
+            className="tile"
+            style={{ minHeight: 156, alignItems: "center", justifyContent: "center", gap: 12 }}
+            onClick={() => onPick(c)}
+          >
+            <Avatar id={c.avatarId} size={72} />
+            <span style={{ fontSize: 18 }}>{c.nickname}</span>
           </button>
         ))}
       </div>
       <div className="row between" style={{ marginTop: "auto" }}>
-        <button className="btn btn-ghost" onClick={() => signOut(auth)}>Sign out</button>
-        <button className="btn btn-secondary" onClick={onGrownUps}>👤 Grown-ups</button>
+        <button className="btn btn-ghost" onClick={() => signOut(auth)}>
+          Sign out
+        </button>
+        <button className="btn btn-secondary" onClick={onGrownUps}>
+          <Lock size={16} aria-hidden="true" /> Parent area
+        </button>
       </div>
     </div>
   );

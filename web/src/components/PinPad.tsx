@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Delete } from "lucide-react";
 
 /**
  * PIN entry. While the parent screen checks the PIN (busy), the dots stay filled and a
@@ -29,7 +30,7 @@ export function PinPad({ length = 4, onComplete, busy }: { length?: number; onCo
 
   const full = pin.length === length;
   return (
-    <div className="stack" style={{ alignItems: "center", gap: 24 }}>
+    <div className="stack" style={{ alignItems: "center", gap: 20 }}>
       <div className="pin-dots" aria-hidden="true">
         {Array.from({ length }, (_, i) => (
           <span key={i} className={i < pin.length ? "on" : ""} />
@@ -48,8 +49,8 @@ export function PinPad({ length = 4, onComplete, busy }: { length?: number; onCo
         <button onClick={() => press("0")} disabled={busy} aria-label="0">
           0
         </button>
-        <button onClick={() => setPin((p) => p.slice(0, -1))} disabled={busy} aria-label="Delete" style={{ fontSize: 22 }}>
-          ⌫
+        <button className="plain" onClick={() => setPin((p) => p.slice(0, -1))} disabled={busy} aria-label="Delete">
+          <Delete size={26} aria-hidden="true" />
         </button>
       </div>
     </div>

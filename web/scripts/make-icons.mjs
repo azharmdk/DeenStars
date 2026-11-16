@@ -59,9 +59,9 @@ function inPoly(x, y, poly) {
 }
 
 function pixel(x, y) {
-  const emerald = [11, 107, 82, 255];
-  const gold = [246, 181, 30, 255];
-  const cream = [255, 248, 232, 255];
+  const emerald = [14, 92, 79, 255];
+  const gold = [242, 193, 78, 255];
+  const cream = [255, 255, 255, 255];
   if (inPoly(x, y, star)) return gold;
   // crescent: big circle minus offset circle
   const d1 = Math.hypot(x - 0.74, y - 0.24), d2 = Math.hypot(x - 0.79, y - 0.21);

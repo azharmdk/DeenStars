@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Check, ChevronRight, ShieldCheck } from "lucide-react";
 import { Child } from "../types";
-import { Sheet } from "../components/common";
+import { BackLink, ProgressBar, Sheet } from "../components/common";
+import { DUA_ICONS } from "../components/icons";
 
 /**
  * Dua Corner UI prototype. No dua text is included: Arabic, transliteration, translation and
@@ -8,12 +10,12 @@ import { Sheet } from "../components/common";
  * on this device only until the updateDuaProgress function is built.
  */
 const SAMPLE_DUAS = [
-  { id: "eat_before", title: "Before eating", emoji: "🍽️", when: "Before you start eating" },
-  { id: "eat_after", title: "After eating", emoji: "😋", when: "When you finish eating" },
-  { id: "sleep", title: "Before sleeping", emoji: "😴", when: "When you get into bed" },
-  { id: "wake", title: "After waking up", emoji: "🌅", when: "When you wake up" },
-  { id: "bathroom", title: "Entering the bathroom", emoji: "🚿", when: "Before you go into the bathroom" },
-  { id: "home", title: "Leaving home", emoji: "🏡", when: "When you go out of the house" },
+  { id: "eat_before", title: "Before eating", when: "Before you start eating" },
+  { id: "eat_after", title: "After eating", when: "When you finish eating" },
+  { id: "sleep", title: "Before sleeping", when: "When you get into bed" },
+  { id: "wake", title: "After waking up", when: "When you wake up" },
+  { id: "bathroom", title: "Entering the bathroom", when: "Before you go into the bathroom" },
+  { id: "home", title: "Leaving home", when: "When you go out of the house" },
 ];
 
 const STATES = ["notStarted", "learning", "practising", "learned"] as const;
@@ -49,19 +51,32 @@ export function DuaCorner({ child, onBack }: { child: Child; onBack: () => void 
 
   return (
     <div className="screen">
-      <button className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={onBack}>
-        ← Back
-      </button>
-      <h1>Dua Corner 🤲</h1>
-      <p className="muted">My progress: {learnedCount} of {SAMPLE_DUAS.length} learned</p>
-      <div className="grid2">
+      <BackLink onClick={onBack} />
+      <div className="stack" style={{ gap: 10 }}>
+        <h1>Dua Corner</h1>
+        <div className="row between">
+          <span className="muted small">{learnedCount} of {SAMPLE_DUAS.length} learned</span>
+        </div>
+        <ProgressBar value={learnedCount / SAMPLE_DUAS.length} label="Duas learned" />
+      </div>
+      <div className="list">
         {SAMPLE_DUAS.map((d) => {
           const s = progress[d.id] ?? "notStarted";
+          const Icon = DUA_ICONS[d.id];
           return (
-            <button key={d.id} className="tile" style={{ background: s === "learned" ? "var(--mint)" : "var(--lavender-soft)" }} onClick={() => setOpen(d)}>
-              <span className="icon" aria-hidden="true">{d.emoji}</span>
-              <span>{d.title}</span>
-              <span className="small muted">{LABEL[s]}</span>
+            <button key={d.id} className="list-item" onClick={() => setOpen(d)}>
+              <span className="icon-chip" style={{ background: "var(--c-dua-bg)", color: "var(--c-dua)" }} aria-hidden="true">
+                <Icon size={22} />
+              </span>
+              <span className="stack" style={{ gap: 2, flex: 1 }}>
+                <span className="strong">{d.title}</span>
+                <span className="small faint">{LABEL[s]}</span>
+              </span>
+              {s === "learned" ? (
+                <span className="check-circle done" aria-hidden="true"><Check size={16} strokeWidth={3} /></span>
+              ) : (
+                <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
+              )}
             </button>
           );
         })}
@@ -69,27 +84,33 @@ export function DuaCorner({ child, onBack }: { child: Child; onBack: () => void 
 
       {open && (
         <Sheet label={open.title} onClose={() => setOpen(null)}>
-          <div className="stack">
-            <div className="big-pic" style={{ background: "var(--lavender-soft)" }} aria-hidden="true">{open.emoji}</div>
+          <div className="stack" style={{ gap: 14 }}>
+            <span className="eyebrow" style={{ color: "var(--c-dua)" }}>Dua · sample</span>
             <h2>{open.title}</h2>
-            <div className="card stack center" style={{ minHeight: 120, justifyContent: "center" }}>
-              <p dir="rtl" lang="ar" style={{ fontSize: 26, color: "var(--ink-soft)" }}>
-                — Arabic text —
+            <div className="card stack center" style={{ minHeight: 150, justifyContent: "center", gap: 8 }}>
+              <p className="arabic" dir="rtl" lang="ar" style={{ fontSize: 28, color: "var(--ink-3)" }}>
+                ـــــــــ
               </p>
-              <p className="small muted">The reviewed Arabic text, transliteration, meaning and audio will appear here.</p>
+              <p className="small muted" style={{ maxWidth: 300 }}>
+                The Arabic text, transliteration, meaning and audio will appear here once a scholar has reviewed them.
+              </p>
             </div>
-            <div className="gentle-box small">When: {open.when}</div>
-            <div className="small muted">Source: added after scholar review</div>
-            <div className="stack" style={{ gap: 6 }}>
-              <span style={{ fontWeight: 700 }}>How am I doing?</span>
-              <div className="chips">
+            <div className="row small muted" style={{ gap: 8 }}>
+              <span className="strong" style={{ color: "var(--ink)" }}>When:</span> {open.when}
+            </div>
+            <div className="row tiny faint" style={{ gap: 6 }}>
+              <ShieldCheck size={16} aria-hidden="true" /> Source reference added after review
+            </div>
+            <div className="field">
+              <span className="label">How am I doing?</span>
+              <div className="segmented" role="group" aria-label="Learning progress">
                 {STATES.map((s) => (
-                  <button key={s} className="chip" aria-pressed={(progress[open.id] ?? "notStarted") === s} onClick={() => setState(open.id, s)}>
+                  <button key={s} aria-pressed={(progress[open.id] ?? "notStarted") === s} onClick={() => setState(open.id, s)} style={{ fontSize: 13 }}>
                     {LABEL[s]}
                   </button>
                 ))}
               </div>
-              <span className="small muted">A grown-up can confirm when you know it by heart.</span>
+              <span className="tiny faint">A grown-up can confirm when you know it by heart.</span>
             </div>
             <button className="btn btn-ghost" onClick={() => setOpen(null)}>
               Close

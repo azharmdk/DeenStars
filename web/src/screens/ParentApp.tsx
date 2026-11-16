@@ -1,11 +1,13 @@
 ﻿import { useState } from "react";
 import { signOut } from "firebase/auth";
+import { Check, ChevronRight, ClipboardCheck, LayoutDashboard, Lock, LogOut, Settings as SettingsIcon, UserPlus, Users } from "lucide-react";
 import { auth } from "../firebase";
 import { api, friendlyError } from "../api";
 import { usePendingApprovals } from "../data";
-import { ErrorBox } from "../components/common";
+import { BackLink, ErrorBox, Notice, StarCount } from "../components/common";
 import { PinPad } from "../components/PinPad";
-import { AgeGroup, Approval, avatarEmoji, Child, Difficulty } from "../types";
+import { Avatar } from "../components/icons";
+import { AgeGroup, Approval, Child, Difficulty, DIFFICULTY_LABEL, displayTitle } from "../types";
 import { ChildForm } from "./Onboarding";
 
 /** Parental gate: an adult reading-and-arithmetic check that young children can't easily pass. */
@@ -24,17 +26,24 @@ export function ParentGate({ onPass, onCancel }: { onPass: () => void; onCancel:
   const [gate, setGate] = useState(makeGate);
   const [wrong, setWrong] = useState(false);
   return (
-    <div className="screen no-tabs center">
-      <h1>Grown-ups only</h1>
-      <p>Please read and answer:</p>
-      <p className="card" style={{ fontSize: 20 }}>
-        Touch the number that is <strong>{WORDS[gate.a]}</strong> plus <strong>{WORDS[gate.b]}</strong>.
-      </p>
-      <div className="grid2" style={{ width: "100%" }}>
+    <div className="screen no-tabs">
+      <BackLink onClick={onCancel} />
+      <div className="stack center" style={{ gap: 12, marginTop: 24 }}>
+        <span className="icon-chip lg" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
+          <Lock size={26} />
+        </span>
+        <h1>For grown-ups</h1>
+        <p className="muted" style={{ fontSize: 17, maxWidth: 320 }}>
+          Tap the number that is <strong style={{ color: "var(--ink)" }}>{WORDS[gate.a]}</strong> plus{" "}
+          <strong style={{ color: "var(--ink)" }}>{WORDS[gate.b]}</strong>.
+        </p>
+      </div>
+      <div className="grid2" style={{ marginTop: 8 }}>
         {gate.options.map((n) => (
           <button
             key={n}
             className="btn btn-secondary btn-child"
+            style={{ fontSize: 22 }}
             onClick={() => {
               if (n === gate.answer) onPass();
               else {
@@ -47,8 +56,7 @@ export function ParentGate({ onPass, onCancel }: { onPass: () => void; onCancel:
           </button>
         ))}
       </div>
-      {wrong && <p className="muted">Not quite. Here is a new question.</p>}
-      <button className="btn btn-ghost" onClick={onCancel}>Back</button>
+      {wrong && <p className="muted small" style={{ textAlign: "center" }}>Not quite. Here's a new question.</p>}
     </div>
   );
 }
@@ -69,11 +77,13 @@ export function ParentPin({ onSession, onCancel }: { onSession: (id: string, exp
     }
   }
   return (
-    <div className="screen no-tabs center">
-      <h1>Enter your PIN</h1>
-      <ErrorBox message={error} />
-      <PinPad onComplete={submit} busy={busy} />
-      <button className="btn btn-ghost" onClick={onCancel}>Back</button>
+    <div className="screen no-tabs">
+      <BackLink onClick={onCancel} />
+      <div className="stack center" style={{ gap: 20, marginTop: 16 }}>
+        <h1>Enter your PIN</h1>
+        <ErrorBox message={error} />
+        <PinPad onComplete={submit} busy={busy} />
+      </div>
     </div>
   );
 }
@@ -99,33 +109,36 @@ export function ParentApp(props: {
     }
   }
 
-  const tabs: { id: PTab; icon: string; label: string }[] = [
-    { id: "overview", icon: "ðŸ“Š", label: "Overview" },
-    { id: "approvals", icon: "âœ…", label: "Approvals" },
-    { id: "children", icon: "ðŸ‘§", label: "Children" },
-    { id: "settings", icon: "âš™ï¸", label: "Settings" },
+  const tabs = [
+    { id: "overview" as PTab, Icon: LayoutDashboard, label: "Overview" },
+    { id: "approvals" as PTab, Icon: ClipboardCheck, label: "Approvals" },
+    { id: "children" as PTab, Icon: Users, label: "Children" },
+    { id: "settings" as PTab, Icon: SettingsIcon, label: "Settings" },
   ];
 
   return (
     <>
-      <div className="parent-top">
-        <strong>Parent area</strong>
-        <button className="btn btn-secondary" onClick={props.onExit}>Exit to kids</button>
+      <div className="parent-header">
+        <span className="row" style={{ gap: 8 }}>
+          <Lock size={16} color="var(--primary)" aria-hidden="true" />
+          <span className="strong">Parent area</span>
+        </span>
+        <button className="btn btn-soft btn-sm" onClick={props.onExit}>
+          Back to kids
+        </button>
       </div>
       {tab === "overview" && <Overview children={props.children} approvals={approvals} onApprovals={() => setTab("approvals")} />}
-      {tab === "approvals" && (
-        <Approvals children={props.children} approvals={approvals} sessionId={props.sessionId} guarded={guarded} />
-      )}
+      {tab === "approvals" && <Approvals children={props.children} approvals={approvals} sessionId={props.sessionId} guarded={guarded} />}
       {tab === "children" && <ChildrenAdmin children={props.children} sessionId={props.sessionId} guarded={guarded} />}
       {tab === "settings" && <Settings />}
       <nav className="tabbar" aria-label="Parent">
-        {tabs.map((t) => (
-          <button key={t.id} className="tab" aria-current={tab === t.id ? "page" : undefined} onClick={() => setTab(t.id)}>
-            <span className="icon" aria-hidden="true">{t.icon}</span>
-            <span>
-              {t.label}
-              {t.id === "approvals" && pendingCount > 0 && <span className="badge-count">{pendingCount}</span>}
-            </span>
+        {tabs.map(({ id, Icon, label }) => (
+          <button key={id} className="tab" aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>
+            <Icon size={24} strokeWidth={tab === id ? 2.4 : 2} aria-hidden="true" />
+            {label}
+            {id === "approvals" && pendingCount > 0 && (
+              <span className="tab-badge" aria-label={`${pendingCount} waiting`}>{pendingCount}</span>
+            )}
           </button>
         ))}
       </nav>
@@ -134,27 +147,35 @@ export function ParentApp(props: {
 }
 
 function Overview({ children, approvals, onApprovals }: { children: Child[]; approvals: Record<string, Approval[]>; onApprovals: () => void }) {
+  const pending = Object.values(approvals).reduce((n, l) => n + l.length, 0);
   return (
     <div className="screen">
-      <h1>Today</h1>
-      {children.map((c) => (
-        <div key={c.id} className="card row">
-          <span style={{ fontSize: 36 }} aria-hidden="true">{avatarEmoji(c.avatarId)}</span>
-          <div className="stack" style={{ gap: 2, flex: 1 }}>
-            <h3>{c.nickname}</h3>
-            <span className="small muted">Age group {c.ageGroup} Â· {c.difficulty}</span>
+      <h1>Overview</h1>
+      {pending > 0 && (
+        <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "var(--accent-soft)", borderColor: "#f0dfb5" }} onClick={onApprovals}>
+          <span className="icon-chip" style={{ background: "#fff", color: "var(--accent)" }} aria-hidden="true">
+            <ClipboardCheck size={22} />
+          </span>
+          <span className="stack" style={{ gap: 2, flex: 1 }}>
+            <span>{pending} {pending === 1 ? "activity" : "activities"} to check</span>
+            <span className="sub">Review and approve</span>
+          </span>
+          <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
+        </button>
+      )}
+      <span className="section-title">Children</span>
+      <div className="list">
+        {children.map((c) => (
+          <div key={c.id} className="list-item" style={{ cursor: "default" }}>
+            <Avatar id={c.avatarId} size={44} />
+            <span className="stack" style={{ gap: 2, flex: 1 }}>
+              <span className="strong">{c.nickname}</span>
+              <span className="small faint">Age {c.ageGroup} · {DIFFICULTY_LABEL[c.difficulty]}</span>
+            </span>
+            <StarCount n={c.totals?.stars ?? 0} />
           </div>
-          <div className="stack" style={{ gap: 2, alignItems: "flex-end" }}>
-            <span>â­ {c.totals?.stars ?? 0}</span>
-            {(approvals[c.id]?.length ?? 0) > 0 && (
-              <button className="status pending" style={{ border: "none", cursor: "pointer" }} onClick={onApprovals}>
-                â³ {approvals[c.id].length} to check
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
-      <div className="gentle-box small">Weekly and monthly reports will come in a later build.</div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -191,29 +212,42 @@ function Approvals(props: {
     <div className="screen">
       <h1>Approvals</h1>
       <ErrorBox message={error} />
-      {!any && <div className="gentle-box">Nothing waiting. ðŸŒ¿</div>}
+      {!any && (
+        <div className="card stack center" style={{ padding: 32, gap: 8 }}>
+          <span className="icon-chip lg" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
+            <Check size={28} />
+          </span>
+          <h3>All caught up</h3>
+          <p className="muted small">Activities your children ask you to check will appear here.</p>
+        </div>
+      )}
       {props.children.map((c) => {
         const list = props.approvals[c.id] ?? [];
         if (list.length === 0) return null;
         return (
-          <div key={c.id} className="stack">
+          <div key={c.id} className="stack" style={{ gap: 10 }}>
             <div className="row between">
-              <h3>{avatarEmoji(c.avatarId)} {c.nickname}</h3>
+              <span className="row" style={{ gap: 10 }}>
+                <Avatar id={c.avatarId} size={32} />
+                <h3>{c.nickname}</h3>
+              </span>
               {list.length > 1 && (
-                <button className="btn btn-secondary" style={{ minHeight: 40, fontSize: 15 }} onClick={() => approveAll(c)} disabled={!!busy}>
+                <button className="btn btn-soft btn-sm" onClick={() => approveAll(c)} disabled={!!busy}>
                   Approve all
                 </button>
               )}
             </div>
             {list.map((a) => (
-              <div key={a.id} className="card stack">
-                <div className="row between">
-                  <strong>{a.activityTitleSnapshot?.en}</strong>
-                  <span className="small">â­ {a.stars}</span>
+              <div key={a.id} className="card stack" style={{ gap: 12 }}>
+                <div className="row between" style={{ alignItems: "flex-start" }}>
+                  <span className="stack" style={{ gap: 2 }}>
+                    <span className="strong">{displayTitle(a.activityTitleSnapshot?.en ?? "")}</span>
+                    <span className="small faint">{a.dayKey}</span>
+                  </span>
+                  <StarCount n={a.stars} size={16} />
                 </div>
-                <span className="small muted">{a.dayKey}</span>
                 <div className="row">
-                  <button className="btn btn-ghost" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "decline")}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "decline")}>
                     Not yet
                   </button>
                   <button className="btn btn-primary" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "approve")}>
@@ -237,15 +271,20 @@ function ChildrenAdmin(props: { children: Child[]; sessionId: string; guarded: <
   return (
     <div className="screen">
       <h1>Children</h1>
-      {props.children.map((c) => (
-        <button key={c.id} className="task" onClick={() => setEditing(c)}>
-          <span className="pic" style={{ background: "var(--mint)" }} aria-hidden="true">{avatarEmoji(c.avatarId)}</span>
-          <span className="title">{c.nickname}</span>
-          <span className="small muted">Age {c.ageGroup} â€º</span>
-        </button>
-      ))}
+      <div className="list">
+        {props.children.map((c) => (
+          <button key={c.id} className="list-item" onClick={() => setEditing(c)}>
+            <Avatar id={c.avatarId} size={44} />
+            <span className="stack" style={{ gap: 2, flex: 1 }}>
+              <span className="strong">{c.nickname}</span>
+              <span className="small faint">Age {c.ageGroup} · {DIFFICULTY_LABEL[c.difficulty]}</span>
+            </span>
+            <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
       <button className="btn btn-primary btn-block" onClick={() => setAdding(true)}>
-        + Add a child
+        <UserPlus size={18} aria-hidden="true" /> Add a child
       </button>
     </div>
   );
@@ -287,22 +326,25 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
 
   return (
     <div className="screen">
-      <button className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={props.onDone}>â† Back</button>
-      <h1>{avatarEmoji(c.avatarId)} {c.nickname}</h1>
+      <BackLink onClick={props.onDone} label="Children" />
+      <div className="row" style={{ gap: 14 }}>
+        <Avatar id={c.avatarId} size={56} />
+        <h1>{c.nickname}</h1>
+      </div>
       <div className="field">
-        <label>Age group</label>
-        <div className="chips">
+        <span className="label">Age group</span>
+        <div className="segmented" role="group" aria-label="Age group">
           {(["3-4", "5", "6"] as AgeGroup[]).map((g) => (
-            <button key={g} className="chip" aria-pressed={ageGroup === g} onClick={() => setAgeGroup(g)}>Age {g}</button>
+            <button key={g} aria-pressed={ageGroup === g} onClick={() => setAgeGroup(g)}>Age {g}</button>
           ))}
         </div>
       </div>
       <div className="field">
-        <label>Difficulty</label>
-        <div className="chips">
+        <span className="label">Difficulty</span>
+        <div className="segmented" role="group" aria-label="Difficulty">
           {(["gentle", "standard", "challenge"] as Difficulty[]).map((d) => (
-            <button key={d} className="chip" aria-pressed={difficulty === d} onClick={() => setDifficulty(d)}>
-              {d[0].toUpperCase() + d.slice(1)}
+            <button key={d} aria-pressed={difficulty === d} onClick={() => setDifficulty(d)}>
+              {DIFFICULTY_LABEL[d]}
             </button>
           ))}
         </div>
@@ -310,9 +352,9 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
       <ErrorBox message={error} />
       <button className="btn btn-primary btn-block" disabled={busy} onClick={save}>Save changes</button>
 
-      <div className="card stack" style={{ marginTop: 24 }}>
+      <div className="card stack" style={{ marginTop: 16, borderColor: "#efd3cd" }}>
         <h3>Delete this profile</h3>
-        <p className="small muted">This permanently removes {c.nickname}'s profile, stars and progress. It cannot be undone.</p>
+        <p className="small muted">This permanently removes {c.nickname}'s profile, stars and progress. It can't be undone.</p>
         <div className="field">
           <label htmlFor="confirm">Type the nickname to confirm</label>
           <input id="confirm" className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
@@ -329,14 +371,20 @@ function Settings() {
   return (
     <div className="screen">
       <h1>Settings</h1>
-      <div className="card stack">
-        <h3>Account</h3>
-        <p className="small muted">{auth.currentUser?.email}</p>
-        <button className="btn btn-secondary btn-block" onClick={() => signOut(auth)}>Sign out</button>
+      <span className="section-title">Account</span>
+      <div className="list">
+        <div className="list-item" style={{ cursor: "default" }}>
+          <span className="stack" style={{ gap: 2, flex: 1 }}>
+            <span className="small faint">Signed in as</span>
+            <span className="strong">{auth.currentUser?.email}</span>
+          </span>
+        </div>
+        <button className="list-item" onClick={() => signOut(auth)} style={{ color: "var(--danger)" }}>
+          <LogOut size={20} aria-hidden="true" />
+          <span className="title">Sign out</span>
+        </button>
       </div>
-      <div className="gentle-box small">
-        Notifications, leaderboard opt-in, data export and account deletion will come in later builds.
-      </div>
+      <Notice tone="calm">Notifications, leaderboard opt-in, data export and account deletion will come in later builds.</Notice>
     </div>
   );
 }

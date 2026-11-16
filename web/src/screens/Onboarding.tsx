@@ -6,26 +6,35 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import { ClipboardList, EyeOff, ShieldCheck, Trash2 } from "lucide-react";
 import { auth } from "../firebase";
 import { api, friendlyError } from "../api";
-import { Mascot } from "../components/Mascot";
-import { ErrorBox } from "../components/common";
+import { BackLink, ErrorBox, Notice } from "../components/common";
 import { PinPad } from "../components/PinPad";
-import { AVATARS, AgeGroup, Difficulty } from "../types";
+import { AVATAR_STYLES, Avatar, BrandMark } from "../components/icons";
+import { AgeGroup, Difficulty, DIFFICULTY_LABEL } from "../types";
 
 export const CONSENT_VERSION = "proto-2025-1";
 
 export function Welcome({ onStart }: { onStart: (mode: "register" | "login") => void }) {
   return (
-    <div className="screen no-tabs center">
-      <Mascot size={150} />
-      <h1 style={{ color: "var(--emerald-deep)" }}>DeenStars</h1>
-      <p className="muted">Little Steps. Beautiful Habits. Brighter Hearts.</p>
-      <div className="stack" style={{ width: "100%", marginTop: 24 }}>
+    <div className="screen no-tabs" style={{ justifyContent: "space-between" }}>
+      <div />
+      <div className="stack center" style={{ gap: 16 }}>
+        <BrandMark size={88} />
+        <h1 style={{ fontSize: 34 }}>DeenStars</h1>
+        <p className="muted" style={{ fontSize: 17, maxWidth: 320 }}>
+          Little steps. Beautiful habits. Brighter hearts.
+        </p>
+        <p className="faint small" style={{ maxWidth: 320 }}>
+          Daily Islamic habits, duas and gentle learning games for children aged 3 to 6, guided by parents.
+        </p>
+      </div>
+      <div className="stack">
         <button className="btn btn-primary btn-block" onClick={() => onStart("register")}>
           Get started
         </button>
-        <button className="btn btn-ghost btn-block" onClick={() => onStart("login")}>
+        <button className="btn btn-secondary btn-block" onClick={() => onStart("login")}>
           I already have an account
         </button>
       </div>
@@ -95,11 +104,11 @@ export function AuthScreen({ mode, onBack }: { mode: "register" | "login"; onBac
 
   return (
     <form className="screen no-tabs" onSubmit={submit}>
-      <button type="button" className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={onBack}>
-        â† Back
-      </button>
-      <h1>{current === "register" ? "Create a parent account" : "Welcome back"}</h1>
-      <p className="muted">For parents and guardians. Children do not need their own account.</p>
+      <BackLink onClick={onBack} />
+      <div className="stack" style={{ gap: 6 }}>
+        <h1>{current === "register" ? "Create a parent account" : "Welcome back"}</h1>
+        <p className="muted">For parents and guardians. Children don't need their own account.</p>
+      </div>
       <div className="field">
         <label htmlFor="email">Email</label>
         <input id="email" className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -115,12 +124,12 @@ export function AuthScreen({ mode, onBack }: { mode: "register" | "login"; onBac
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        {current === "register" && <span className="small muted">At least 10 characters.</span>}
+        {current === "register" && <span className="tiny faint">At least 10 characters.</span>}
       </div>
       <ErrorBox message={error} />
-      {info && <div className="gentle-box" role="status">{info}</div>}
+      {info && <Notice>{info}</Notice>}
       <button className="btn btn-primary btn-block" disabled={busy}>
-        {busy ? "Please waitâ€¦" : current === "register" ? "Create account" : "Sign in"}
+        {busy ? "Please wait…" : current === "register" ? "Create account" : "Sign in"}
       </button>
       {current === "login" && (
         <button type="button" className="btn btn-ghost" onClick={reset}>
@@ -130,7 +139,7 @@ export function AuthScreen({ mode, onBack }: { mode: "register" | "login"; onBac
       <button type="button" className="btn btn-ghost" onClick={() => setCurrent(current === "register" ? "login" : "register")}>
         {current === "register" ? "I already have an account" : "Create a new account"}
       </button>
-      <p className="small muted">Sign in with Apple will be available in the iOS app.</p>
+      <p className="tiny faint" style={{ textAlign: "center" }}>Sign in with Apple will be available in the iOS app.</p>
     </form>
   );
 }
@@ -157,37 +166,42 @@ export function ConsentScreen() {
   }
 
   const items = [
-    { icon: "ðŸ“‹", title: "What we collect", text: "Your email, and for each child a nickname, birth month and year, avatar, and learning progress." },
-    { icon: "ðŸ‘¨â€ðŸ‘©â€ðŸ‘§", title: "Who can see it", text: "Only you. Children's details are never public." },
-    { icon: "ðŸš«", title: "What we never do", text: "No ads, no chat between children, no location, no selling data." },
-    { icon: "ðŸ—‘ï¸", title: "Your control", text: "You can delete a child's profile and all of its data at any time." },
+    { Icon: ClipboardList, title: "What we collect", text: "Your email, and for each child a nickname, birth month and year, avatar and learning progress." },
+    { Icon: ShieldCheck, title: "Who can see it", text: "Only you. Children's details are never public." },
+    { Icon: EyeOff, title: "What we never do", text: "No ads, no chat between children, no location tracking, no selling data." },
+    { Icon: Trash2, title: "You're in control", text: "Delete a child's profile and all of its data at any time." },
   ];
 
   return (
     <div className="screen no-tabs">
-      <h1>Your child's privacy</h1>
-      <p className="muted">Please read this before adding a child.</p>
-      {items.map((i) => (
-        <div className="card row" key={i.title} style={{ alignItems: "flex-start" }}>
-          <span style={{ fontSize: 28 }} aria-hidden="true">{i.icon}</span>
-          <div className="stack" style={{ gap: 2 }}>
-            <h3>{i.title}</h3>
-            <p className="muted">{i.text}</p>
-          </div>
-        </div>
-      ))}
-      <div className="gentle-box small">
-        Prototype note: this is a test build. Please use made-up nicknames only, not your child's real name.
+      <div className="stack" style={{ gap: 6 }}>
+        <span className="eyebrow">Step 1 of 3</span>
+        <h1>Your child's privacy</h1>
+        <p className="muted">Please read this before adding a child.</p>
       </div>
-      <label className="row" style={{ cursor: "pointer" }}>
+      <div className="list">
+        {items.map(({ Icon, title, text }) => (
+          <div className="list-item" key={title} style={{ cursor: "default", alignItems: "flex-start" }}>
+            <span className="icon-chip" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
+              <Icon size={22} />
+            </span>
+            <div className="stack" style={{ gap: 2 }}>
+              <h3>{title}</h3>
+              <p className="muted small">{text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Notice tone="calm">This is a test build. Please use made-up nicknames, not your child's real name.</Notice>
+      <label className="row card" style={{ cursor: "pointer", alignItems: "flex-start" }}>
         <input
           type="checkbox"
+          className="checkbox"
           checked={checked}
           onChange={(e) => {
             setChecked(e.target.checked);
             setError(null);
           }}
-          style={{ width: 26, height: 26 }}
         />
         <span>I am the parent or legal guardian of the children I will add.</span>
       </label>
@@ -230,9 +244,12 @@ export function SetPinScreen() {
   }
 
   return (
-    <div className="screen no-tabs center">
-      <h1>{first ? "Enter the PIN again" : "Set a parent PIN"}</h1>
-      <p className="muted">You'll use this 4-digit PIN to open the grown-ups area and approve activities.</p>
+    <div className="screen no-tabs center" style={{ gap: 20 }}>
+      <span className="eyebrow">Step 2 of 3</span>
+      <h1>{first ? "Confirm your PIN" : "Set a parent PIN"}</h1>
+      <p className="muted" style={{ maxWidth: 330 }}>
+        You'll use this 4-digit PIN to open the parent area and approve activities.
+      </p>
       <ErrorBox message={error} />
       <PinPad key={first ? "confirm" : "first"} onComplete={onComplete} busy={busy} />
     </div>
@@ -292,22 +309,21 @@ export function ChildForm({ onDone, onCancel, first }: { onDone: () => void; onC
     }
   }
 
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   return (
     <form className="screen no-tabs" onSubmit={save}>
-      {onCancel && (
-        <button type="button" className="btn btn-ghost" style={{ alignSelf: "flex-start", padding: 0 }} onClick={onCancel}>
-          â† Back
-        </button>
-      )}
-      <h1>{first ? "Add your first child" : "Add a child"}</h1>
+      {onCancel && <BackLink onClick={onCancel} />}
+      <div className="stack" style={{ gap: 6 }}>
+        {first && <span className="eyebrow">Step 3 of 3</span>}
+        <h1>{first ? "Add your first child" : "Add a child"}</h1>
+      </div>
       <div className="field">
         <label htmlFor="nick">Nickname</label>
         <input id="nick" className="input" maxLength={20} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. Little Star" />
-        <span className="small muted">Only you and your child see this. Please use a made-up name while testing.</span>
+        <span className="tiny faint">Only you and your child see this. Please use a made-up name while testing.</span>
       </div>
       <div className="field">
-        <label>Birth month and year</label>
+        <span className="label">Birth month and year</span>
         <div className="row">
           <select className="input" aria-label="Birth month" value={birthMonth} onChange={(e) => setBirth(birthYear, Number(e.target.value))}>
             {months.map((m, i) => (
@@ -322,39 +338,39 @@ export function ChildForm({ onDone, onCancel, first }: { onDone: () => void; onC
         </div>
       </div>
       <div className="field">
-        <label>Avatar</label>
-        <div className="chips">
-          {AVATARS.map((a) => (
-            <button type="button" key={a.id} className="chip avatar-pick" aria-pressed={avatarId === a.id} aria-label={a.label} onClick={() => setAvatarId(a.id)}>
-              {a.emoji}
+        <span className="label">Avatar</span>
+        <div className="avatar-grid">
+          {AVATAR_STYLES.map((a) => (
+            <button type="button" key={a.id} className="avatar-option" aria-pressed={avatarId === a.id} aria-label={a.label} onClick={() => setAvatarId(a.id)}>
+              <Avatar id={a.id} size={56} />
             </button>
           ))}
         </div>
       </div>
       <div className="field">
-        <label>Age group</label>
-        <div className="chips">
+        <span className="label">Age group</span>
+        <div className="segmented" role="group" aria-label="Age group">
           {(["3-4", "5", "6"] as AgeGroup[]).map((g) => (
-            <button type="button" key={g} className="chip" aria-pressed={ageGroup === g} onClick={() => setAgeGroup(g)}>
+            <button type="button" key={g} aria-pressed={ageGroup === g} onClick={() => setAgeGroup(g)}>
               Age {g}
             </button>
           ))}
         </div>
-        <span className="small muted">Suggested from age. You can change it any time.</span>
+        <span className="tiny faint">Suggested from the birth date. You can change it any time.</span>
       </div>
       <div className="field">
-        <label>Difficulty</label>
-        <div className="chips">
+        <span className="label">Difficulty</span>
+        <div className="segmented" role="group" aria-label="Difficulty">
           {(["gentle", "standard", "challenge"] as Difficulty[]).map((d) => (
-            <button type="button" key={d} className="chip" aria-pressed={difficulty === d} onClick={() => setDifficulty(d)}>
-              {d[0].toUpperCase() + d.slice(1)}
+            <button type="button" key={d} aria-pressed={difficulty === d} onClick={() => setDifficulty(d)}>
+              {DIFFICULTY_LABEL[d]}
             </button>
           ))}
         </div>
       </div>
       <ErrorBox message={error} />
       <button className="btn btn-primary btn-block" disabled={busy}>
-        {busy ? "Savingâ€¦" : "Save and continue"}
+        {busy ? "Saving…" : "Save and continue"}
       </button>
     </form>
   );

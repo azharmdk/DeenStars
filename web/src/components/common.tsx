@@ -1,10 +1,20 @@
 import { ReactNode, useEffect } from "react";
+import { AlertCircle, ChevronLeft, Info, Star, Volume2 } from "lucide-react";
 
 export function PrototypeBanner() {
   return (
     <div className="proto-banner" role="note">
-      Prototype for testing · sample content, not reviewed · use test data only
+      Test build · sample content, not yet reviewed · please use made-up details
     </div>
+  );
+}
+
+export function BackLink({ onClick, label = "Back" }: { onClick: () => void; label?: string }) {
+  return (
+    <button type="button" className="back-link" onClick={onClick}>
+      <ChevronLeft size={20} strokeWidth={2.4} aria-hidden="true" />
+      {label}
+    </button>
   );
 }
 
@@ -32,9 +42,11 @@ export function Celebration({ stars, text, onDone }: { stars?: number; text: str
   return (
     <div className="celebrate" role="status" aria-live="polite">
       <div className="burst">
-        <div className="big" aria-hidden="true">🌟</div>
+        <div className="ring" aria-hidden="true">
+          <Star size={36} fill="currentColor" strokeWidth={1.5} />
+        </div>
         <h2>{text}</h2>
-        {stars ? <p className="star-count" style={{ color: "var(--gold)" }}>+{stars} ⭐</p> : null}
+        {stars ? <p className="metric-sm" style={{ color: "var(--accent)" }}>+{stars} stars</p> : null}
       </div>
     </div>
   );
@@ -43,8 +55,18 @@ export function Celebration({ stars, text, onDone }: { stars?: number; text: str
 export function ErrorBox({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <div className="error-box" role="alert">
-      {message}
+    <div className="notice error" role="alert">
+      <AlertCircle size={18} aria-hidden="true" style={{ marginTop: 1 }} />
+      <span>{message}</span>
+    </div>
+  );
+}
+
+export function Notice({ children, tone = "info" }: { children: ReactNode; tone?: "info" | "calm" }) {
+  return (
+    <div className={`notice ${tone}`} role="status">
+      <Info size={18} aria-hidden="true" style={{ marginTop: 1 }} />
+      <span>{children}</span>
     </div>
   );
 }
@@ -66,20 +88,36 @@ export function ProgressBar({ value, label }: { value: number; label: string }) 
   );
 }
 
+export function StarCount({ n, size = 18 }: { n: number; size?: number }) {
+  return (
+    <span className="row" style={{ gap: 4, display: "inline-flex" }}>
+      <Star size={size} fill="var(--accent)" color="var(--accent)" aria-hidden="true" />
+      <span className="strong">{n}</span>
+    </span>
+  );
+}
+
 /** Speaks text with the browser voice (UI prompts only, never Quran or duas). */
 export function speak(text: string) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 0.9;
-  u.pitch = 1.1;
+  u.pitch = 1.05;
   window.speechSynthesis.speak(u);
 }
 
-export function ListenButton({ text }: { text: string }) {
+export function ListenButton({ text, compact }: { text: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <button className="icon-btn" onClick={() => speak(text)} aria-label={`Listen: ${text}`}>
+        <Volume2 size={20} aria-hidden="true" />
+      </button>
+    );
+  }
   return (
     <button className="btn btn-secondary" onClick={() => speak(text)} aria-label={`Listen: ${text}`}>
-      🔊 Listen
+      <Volume2 size={18} aria-hidden="true" /> Listen
     </button>
   );
 }
