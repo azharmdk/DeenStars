@@ -39,7 +39,12 @@ function authMessage(e: unknown): string {
   if (code === "auth/invalid-email") return "Please enter a valid email address.";
   if (code === "auth/weak-password") return "Please choose a stronger password (at least 10 characters).";
   if (code === "auth/too-many-requests") return "Too many tries. Please wait a few minutes.";
-  if (code.startsWith("auth/")) return "Email or password is not right.";
+  if (code === "auth/network-request-failed") return "You seem to be offline. Please try again.";
+  if (code === "auth/configuration-not-found" || code === "auth/operation-not-allowed")
+    return "Sign-up is not switched on for this test app yet. Please tell the app team.";
+  if (["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-login-credentials"].includes(code))
+    return "Email or password is not right.";
+  if (code.startsWith("auth/")) return `Something went wrong (${code}). Please try again.`;
   return friendlyError(e);
 }
 
