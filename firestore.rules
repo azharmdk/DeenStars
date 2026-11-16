@@ -1,0 +1,81 @@
+rules_version = '2';
+
+// DeenStars Firestore rules. Strategy: docs/AUTH_SECURITY.md section 6.
+// Deny by default. Clients read their own data and published content.
+// Clients never write rewards, approvals, progress, milestones, leaderboards or content.
+// All writes go through Cloud Functions (Admin SDK bypasses rules).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function ownsChild(childId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/children/$(childId)).data.ownerUid == request.auth.uid;
+    }
+
+    // ---- Parent data ----
+    match /parents/{uid} {
+      allow read: if isUser(uid);
+      allow write: if false;
+
+      match /notifications/{id} {
+        allow read: if isUser(uid);
+        // Parent may only mark a notification as read.
+        allow update: if isUser(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
+        allow create, delete: if false;
+      }
+
+      // parentSessions and anything else under parents: functions only.
+    }
+
+    // ---- Child data (owner read-only) ----
+    match /children/{childId} {
+      allow read: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow write: if false;
+
+      match /{sub}/{docId} {
+        allow read: if ownsChild(childId);
+        allow write: if false;
+      }
+    }
+
+    // ---- Published content: read-only for signed-in users ----
+    match /activities/{id}        { allow read: if signedIn(); allow write: if false; }
+    match /duaLibrary/{id}        { allow read: if signedIn(); allow write: if false; }
+    match /surahLibrary/{id}      { allow read: if signedIn(); allow write: if false; }
+    match /quizzes/{id}           { allow read: if signedIn(); allow write: if false; }
+    match /quizQuestions/{id}     { allow read: if signedIn(); allow write: if false; }
+    match /games/{id}             { allow read: if signedIn(); allow write: if false; }
+    match /gameContent/{id}       { allow read: if signedIn(); allow write: if false; }
+    match /milestones/{id}        { allow read: if signedIn(); allow write: if false; }
+    match /achievements/{id}      { allow read: if signedIn(); allow write: if false; }
+    match /weeklyChallenges/{id}  { allow read: if signedIn(); allow write: if false; }
+    match /badges/{id}            { allow read: if signedIn(); allow write: if false; }
+    match /appConfiguration/{id}  { allow read: if signedIn(); allow write: if false; }
+
+    // ---- Leaderboards: anonymous snapshot rows, read-only ----
+    match /leaderboards/{boardId} {
+      allow read: if signedIn();
+      allow write: if false;
+      match /entries/{entryId} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+    }
+
+    // Everything else (contentDrafts, contentReviewRecords, auditLog, adminUsers,
+    // monthlyRewards, prizeFulfilment, ...) is denied to clients by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

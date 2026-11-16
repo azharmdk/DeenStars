@@ -8,3 +8,8 @@ dist/
 firebase-debug.log
 GoogleService-Info.plist
 
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pglite-debug.log
+

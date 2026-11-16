@@ -1,0 +1,30 @@
+{
+  "name": "deenstars-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": { "node": "22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run test/unit",
+    "test:rules": "firebase emulators:exec --only firestore --project deenstars-dev \"vitest run test/rules\"",
+    "test:integration": "npm run build && firebase emulators:exec --only auth,firestore,functions --project deenstars-dev \"vitest run test/integration --testTimeout 30000\""
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0",
+    "zod": "^3.23.8"
+  },
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node@^4.0.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "firebase": "^11.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
