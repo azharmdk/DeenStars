@@ -1,24 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Award,
-  CalendarCheck,
-  Check,
-  ChevronRight,
-  HandHeart,
-  House,
-  ListChecks,
-  Lock,
-  MoonStar,
-  Puzzle,
-  Sparkles,
-  Star,
-  Trophy,
-  User,
-  Users,
-  BookOpen,
-  Bed,
-  Library,
-} from "lucide-react";
+import { CalendarCheck, Check, ChevronRight, HandHeart, House, ListChecks, Play, Puzzle, Sparkles, Star, User, Users } from "lucide-react";
 import { api } from "../api";
 import {
   activitiesForChild,
@@ -32,7 +13,7 @@ import {
   useSeason,
   SIM_SEASON_KEY,
 } from "../data";
-import { BackLink, Celebration, Notice, ProgressBar, Sheet } from "../components/common";
+import { BackLink, Celebration, Notice, Sheet } from "../components/common";
 import { Scene } from "../components/scenes";
 import { Avatar, CATEGORY_STYLE, CategoryChip } from "../components/icons";
 import { Activity, ageBandFor, Category, Child, Completion, displayTitle, isStreakActive, Story, Streak, STREAK_CELEBRATIONS } from "../types";
@@ -43,6 +24,7 @@ import { Bedtime, DuaCorner, StoryLibrary, StoryReader, SurahLearning } from "./
 import { EidScreen, RamadanScreen, SeasonCard, ThemeCard } from "./Seasonal";
 import { testerToolsEnabled } from "../devFlags";
 import { getThemePref, setThemePref, type ThemePref } from "../theme";
+import { Art, ArtName, Banner, PageTitle, Rail, SectionHeader } from "../components/ui";
 
 type Tab = "home" | "checklist" | "play" | "stars" | "me";
 type Sub = null | "jummah" | "duas" | "surahs" | "stories" | "story" | "bedtime" | "ramadan" | "eid";
@@ -127,6 +109,7 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
         starsWeek={stars.week}
         doneCount={doneCount}
         total={daily.length}
+        daily={daily}
         friday={friday}
         jummahDone={jummah.filter((a) => completions[a.id]?.status === "done").length}
         jummahTotal={jummah.length}
@@ -169,6 +152,8 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
         pendingCount={pendingCount}
         onDuas={() => setSub("duas")}
         onSurahs={() => setSub("surahs")}
+        onStories={() => setSub("stories")}
+        onBedtime={() => setSub("bedtime")}
         simFriday={simFriday}
         onSimFriday={toggleSimFriday}
       />
@@ -249,6 +234,7 @@ function HomeTab(props: {
   starsWeek: number;
   doneCount: number;
   total: number;
+  daily: Activity[];
   friday: boolean;
   jummahDone: number;
   jummahTotal: number;
@@ -264,21 +250,23 @@ function HomeTab(props: {
   completions: Record<string, Completion>;
   dayKey: string;
 }) {
-  const greeting = `Assalamu Alaikum, ${props.child.nickname}`;
   const f = props.featured;
   const fStatus = props.featuredCompletion?.status;
+  const fStyle = f ? CATEGORY_STYLE[f.category] : undefined;
+  // Not-yet-done first, so the rail starts with something to do. Done items stay visible and celebrated.
+  const rail = [...props.daily].sort((a, b) => Number(props.completions[a.id]?.status === "done") - Number(props.completions[b.id]?.status === "done"));
   return (
     <div className="screen">
       <div className="row between">
         <div className="row" style={{ gap: 12 }}>
-          <Avatar id={props.child.avatarId} size={48} />
+          <Avatar id={props.child.avatarId} size={52} />
           <div className="stack" style={{ gap: 0 }}>
-            <span className="faint small">{greetingForHour(props.hour)}</span>
-            <h2>{greeting}</h2>
+            <span className="faint small strong">{greetingForHour(props.hour)}</span>
+            <h2>Assalamu Alaikum, {props.child.nickname}</h2>
           </div>
         </div>
         <button className="pill-gold" style={{ cursor: "pointer" }} onClick={() => props.onTab("stars")} aria-label={`${props.starsWeek} stars this week. Open My Stars`}>
-          <Star size={20} fill="currentColor" aria-hidden="true" />
+          <Art name="glowing-star" size={24} />
           {props.starsWeek}
         </button>
       </div>
@@ -290,134 +278,70 @@ function HomeTab(props: {
         onOpen={(s) => props.onSub(s === "ramadan" ? "ramadan" : "eid")}
       />
 
-      {f ? (
-        <div className="hero stack" style={{ gap: 16 }}>
-          <div className="row between" style={{ alignItems: "flex-start" }}>
-            <div className="stack" style={{ gap: 6 }}>
-              <span className="faint small strong">Today's deed</span>
-              <h1 style={{ color: "#fff", fontSize: 26 }}>{displayTitle(f.title.en)}</h1>
-              {f.together && (
-                <span className="row small" style={{ gap: 6, color: "rgba(255,255,255,0.85)" }}>
-                  <Users size={16} aria-hidden="true" /> Do it together with a grown-up
-                </span>
-              )}
-            </div>
-            <span className="icon-chip lg" style={{ background: "rgba(255,255,255,0.14)", color: "#fff" }} aria-hidden="true">
-              {(() => {
-                const I = CATEGORY_STYLE[f.category].Icon;
-                return <I size={28} />;
-              })()}
-            </span>
-          </div>
-          {fStatus === "done" ? (
-            <div className="row" style={{ gap: 8, fontWeight: 700 }}>
-              <span className="check-circle done" style={{ borderColor: "#fff", background: "#fff", color: "var(--hero-ink)" }} aria-hidden="true">
-                <Check size={16} strokeWidth={3} />
+      {f && fStyle ? (
+        <div className={`banner hero-banner g-${fStyle.tone}`} style={{ cursor: "default" }}>
+          <span className="banner-text">
+            <span className="banner-badge">Today's deed</span>
+            <span className="banner-title">{displayTitle(f.title.en)}</span>
+            {f.together && <span className="banner-sub">Do it together with a grown-up</span>}
+            {props.featuredStreak && <span className="banner-sub">{props.featuredStreak.current} days in a row. Keep going!</span>}
+            {fStatus === "done" ? (
+              <span className="row" style={{ gap: 8, fontWeight: 800, marginTop: 10 }}>
+                <Check size={20} strokeWidth={3} aria-hidden="true" /> Done today. Well done!
               </span>
-              Done today. Well done!
-            </div>
-          ) : fStatus === "pending" ? (
-            <div className="row" style={{ gap: 8, fontWeight: 700 }}>
-              <Star size={20} color="#f2c14e" aria-hidden="true" /> Waiting for a grown-up
-            </div>
-          ) : (
-            <button className="btn btn-child" style={{ background: "#fff", color: "var(--hero-ink)", ["--edge" as string]: "rgba(0,0,0,0.22)" }} onClick={() => props.onOpen(f)}>
-              Let's do it
-            </button>
-          )}
-          {props.featuredStreak && (
-            <span className="small" style={{ color: "rgba(255,255,255,0.85)" }}>
-              {props.featuredStreak.current} days in a row. Keep going!
-            </span>
-          )}
+            ) : fStatus === "pending" ? (
+              <span className="row" style={{ gap: 8, fontWeight: 800, marginTop: 10 }}>
+                <Star size={18} fill="currentColor" aria-hidden="true" /> Waiting for a grown-up
+              </span>
+            ) : (
+              <button className="btn btn-white" onClick={() => props.onOpen(f)}>
+                <Play size={18} fill="currentColor" aria-hidden="true" /> Let's do it
+              </button>
+            )}
+          </span>
+          <Art name={fStyle.art} size={128} className="banner-art" />
         </div>
       ) : (
-        <div className="hero">
-          <h2 style={{ color: "#fff" }}>New activities are coming soon</h2>
-        </div>
+        <Banner tone="green" art="sparkles" title="New activities are coming soon" wide />
       )}
 
       {props.friday && (
-        <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "var(--c-jummah-bg)", borderColor: "transparent" }} onClick={() => props.onSub("jummah")}>
-          <span className="icon-chip" style={{ background: "#2a3a6a", color: "#fff" }} aria-hidden="true">
-            <MoonStar size={22} />
-          </span>
-          <span className="stack" style={{ gap: 2, flex: 1 }}>
-            <span>Jummah Mubarak</span>
-            <span className="sub">{props.jummahDone} of {props.jummahTotal} Friday activities</span>
-          </span>
-          <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
-        </button>
+        <Banner tone="night" art="mosque" title="Jummah Mubarak" sub={`${props.jummahDone} of ${props.jummahTotal} Friday activities`} wide onClick={() => props.onSub("jummah")} />
       )}
 
-      <div className="grid2">
-        <button className="tile tone-habit" onClick={() => props.onTab("checklist")}>
-          <span className="icon-chip" aria-hidden="true">
-            <ListChecks size={24} />
-          </span>
-          <span className="stack" style={{ gap: 6, width: "100%" }}>
-            Today's checklist
-            <ProgressBar value={props.total ? props.doneCount / props.total : 0} label="Today's checklist progress" />
-            <span className="sub">{props.doneCount} of {props.total} done</span>
-          </span>
-        </button>
-        <button className="tile tone-dua" onClick={() => props.onTab("stars")}>
-          <span className="icon-chip" aria-hidden="true">
-            <Trophy size={24} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            This week
-            <span className="sub">{props.starsWeek} stars earned</span>
-          </span>
-        </button>
-        <button className="tile tone-manners" onClick={() => props.onSub("duas")}>
-          <span className="icon-chip" aria-hidden="true">
-            <HandHeart size={24} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            Dua Corner
-            <span className="sub">Learn a dua</span>
-          </span>
-        </button>
-        <button className="tile tone-quran" onClick={() => props.onTab("play")}>
-          <span className="icon-chip" aria-hidden="true">
-            <Puzzle size={24} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            Play & Learn
-            <span className="sub">Quiz and games</span>
-          </span>
-        </button>
-        <button className="tile tone-salah" onClick={() => props.onSub("stories")}>
-          <span className="icon-chip" aria-hidden="true">
-            <Library size={24} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            Stories
-            <span className="sub">Prophet stories</span>
-          </span>
-        </button>
-        <button className="tile tone-deed" onClick={() => props.onSub("surahs")}>
-          <span className="icon-chip" aria-hidden="true">
-            <BookOpen size={24} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            Short Surahs
-            <span className="sub">Listen and repeat</span>
-          </span>
-        </button>
-      </div>
+      {rail.length > 0 && (
+        <>
+          <SectionHeader title={`Today · ${props.doneCount} of ${props.total}`} onMore={() => props.onTab("checklist")} moreLabel="Open today's checklist" />
+          <Rail label="Today's activities">
+            {rail.map((a) => {
+              const s = CATEGORY_STYLE[a.category];
+              const st = props.completions[a.id]?.status;
+              return (
+                <button key={a.id} role="listitem" className="rail-card" onClick={() => props.onOpen(a)}>
+                  <span className="rail-art" style={{ background: s.bg }}>
+                    <Art name={s.art} size={72} />
+                    {st === "done" && <span className="rail-done" aria-label="Done"><Check size={16} strokeWidth={3} /></span>}
+                    {st === "pending" && <span className="rail-done rail-wait" aria-label="Waiting for a grown-up"><Star size={14} fill="currentColor" /></span>}
+                  </span>
+                  <span className="rail-body">
+                    <span className="rail-title">{displayTitle(a.title.en)}</span>
+                    <span className="rail-sub">{s.label}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </Rail>
+        </>
+      )}
 
-      <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "#1b2547", borderColor: "#1b2547", color: "#eef1fb" }} onClick={() => props.onSub("bedtime")}>
-        <span className="icon-chip" style={{ background: "#2a3563", color: "#f2c14e" }} aria-hidden="true">
-          <Bed size={22} />
-        </span>
-        <span className="stack" style={{ gap: 2, flex: 1 }}>
-          <span>Bedtime</span>
-          <span className="sub" style={{ color: "#b7c0dd" }}>A story and bedtime duas</span>
-        </span>
-        <ChevronRight size={20} color="#b7c0dd" aria-hidden="true" />
-      </button>
+      <SectionHeader title="Explore" />
+      <div className="grid2">
+        <Banner tone="gold" art="palms-up" title="Dua Corner" sub="Learn a dua" onClick={() => props.onSub("duas")} />
+        <Banner tone="purple" art="books" title="Stories" sub="Prophet stories" onClick={() => props.onSub("stories")} />
+        <Banner tone="teal" art="book" title="Short Surahs" sub="Listen and repeat" onClick={() => props.onSub("surahs")} />
+        <Banner tone="blue" art="puzzle" title="Play & Learn" sub="Quiz and games" onClick={() => props.onTab("play")} />
+      </div>
+      <Banner tone="night" art="night" title="Bedtime" sub="A story and bedtime duas" wide onClick={() => props.onSub("bedtime")} />
 
       <ThemeCard dayKey={props.dayKey} activities={props.activities} completions={props.completions} onOpen={props.onOpen} />
     </div>
@@ -473,18 +397,25 @@ function ChecklistTab(props: {
 
   return (
     <div className="screen">
-      <div className="stack" style={{ gap: 10 }}>
-        <div className="row between">
-          <h1>Today</h1>
-          <span className="muted small strong">{done} of {props.items.length} done</span>
-        </div>
-        <ProgressBar value={props.items.length ? done / props.items.length : 0} label="Checklist progress" />
+      <PageTitle title="Today" />
+      <div className="banner wide g-green" style={{ cursor: "default", minHeight: 0 }}>
+        <span className="banner-text" style={{ gap: 10, maxWidth: "64%" }}>
+          <span className="banner-title">{done} of {props.items.length} done</span>
+          <span className="progress" style={{ background: "rgba(255,255,255,0.25)" }}>
+            <span
+              style={{ display: "block", height: "100%", borderRadius: 999, background: "#ffd65c", width: `${props.items.length ? (done / props.items.length) * 100 : 0}%` }}
+              role="progressbar"
+              aria-label="Checklist progress"
+              aria-valuenow={Math.round(props.items.length ? (done / props.items.length) * 100 : 0)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            />
+          </span>
+          <span className="banner-sub">Every little step counts</span>
+        </span>
+        <Art name="seedling" size={96} className="banner-art" />
       </div>
-      {props.friday && (
-        <button className="btn btn-accent btn-child" onClick={props.onJummah}>
-          <MoonStar size={20} aria-hidden="true" /> Open the Jummah checklist
-        </button>
-      )}
+      {props.friday && <Banner tone="night" art="mosque" title="Jummah checklist" sub="Friday activities" wide onClick={props.onJummah} />}
       <div className="filter-row" role="group" aria-label="Show category">
         <button className="filter-pill" aria-pressed={cat === "all"} onClick={() => setCat("all")}>
           <Sparkles size={16} aria-hidden="true" />All
@@ -551,7 +482,7 @@ function JummahScreen(props: {
             <span className="faint small strong">Friday</span>
             <h1 style={{ color: "#fff" }}>Jummah Mubarak</h1>
           </div>
-          <MoonStar size={40} color="#f2c14e" aria-hidden="true" />
+          <Art name="mosque" size={72} />
         </div>
         <div className="step-path" aria-label={`${done} of ${props.items.length} Jummah activities done`}>
           {props.items.map((a) => (
@@ -562,9 +493,7 @@ function JummahScreen(props: {
       </div>
       {allDone && (
         <div className="card row" role="status">
-          <span className="icon-chip lg" style={{ background: "var(--accent-soft)", color: "var(--accent)" }} aria-hidden="true">
-            <Award size={28} />
-          </span>
+          <Art name="medal" size={56} />
           <div>
             <h3>Jummah Hero</h3>
             <p className="muted small">You finished your Friday activities.</p>
@@ -623,7 +552,7 @@ function TaskSheet(props: {
     <Sheet onClose={props.onClose} label={title}>
       <div className="stack" style={{ gap: 14 }}>
         <div className="feature-panel" style={{ backgroundColor: s.bg, color: s.fg }} aria-hidden="true">
-          <s.Icon size={64} strokeWidth={1.6} />
+          <Art name={s.art} size={112} />
         </div>
         <div className="row between" style={{ alignItems: "flex-start" }}>
           <div className="stack" style={{ gap: 6 }}>
@@ -681,68 +610,66 @@ function StarsTab(props: {
     .filter((s) => isStreakActive(s, props.today))
     .sort((a, b) => b.current - a.current);
   const titleOf = (id: string) => displayTitle(props.activities.find((a) => a.id === id)?.title.en ?? "Activity");
-  const milestones = [
-    { title: "First 10 stars", need: 10 },
-    { title: "First 50 stars", need: 50 },
-    { title: "First 100 stars", need: 100 },
+  const milestones: { title: string; need: number; art: ArtName }[] = [
+    { title: "First 10 stars", need: 10, art: "star" },
+    { title: "First 50 stars", need: 50, art: "medal" },
+    { title: "First 100 stars", need: 100, art: "trophy" },
   ];
   return (
     <div className="screen">
-      <h1>My Stars</h1>
-      <div className="hero stack" style={{ gap: 8 }}>
-        <span className="faint small strong">This week</span>
-        <h1 style={{ color: "#fff", fontSize: 26 }}>
-          {props.stars.week > 0 ? `You earned ${props.stars.week} stars this week!` : "Your stars for this week will show here"}
-        </h1>
-        <span className="row small" style={{ gap: 6, color: "rgba(255,255,255,0.85)" }}>
-          <Star size={16} fill="#f2c14e" color="#f2c14e" aria-hidden="true" /> Every little step counts
-        </span>
+      <PageTitle title="My Stars" />
+      <Banner
+        tone="gold"
+        art="trophy"
+        wide
+        badge="This week"
+        title={props.stars.week > 0 ? `You earned ${props.stars.week} stars!` : "Your stars will show here"}
+        sub="Every little step counts"
+      />
+      <div className="stat-row">
+        <div className="stat"><Art name="glowing-star" size={32} /><b>{props.stars.today}</b><span>Today</span></div>
+        <div className="stat"><Art name="calendar" size={32} /><b>{props.stars.month}</b><span>This month</span></div>
+        <div className="stat"><Art name="sparkles" size={32} /><b>{props.stars.total}</b><span>All time</span></div>
       </div>
 
       {active.length > 0 && (
         <>
-          <span className="section-title">Days in a row</span>
+          <SectionHeader title="Days in a row" />
           <div className="list">
             {active.map((s) => (
               <div key={s.activityId} className="list-item" style={{ cursor: "default" }}>
-                <span className="icon-chip" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
-                  <CalendarCheck size={22} />
+                <span className="art-chip" style={{ background: "var(--primary-soft)", width: 48, height: 48, borderRadius: 15 }} aria-hidden="true">
+                  <Art name="calendar" size={32} />
                 </span>
                 <span className="stack" style={{ gap: 2, flex: 1 }}>
                   <span className="strong">{titleOf(s.activityId)}</span>
                   <span className="small faint">{s.current} days in a row. Well done!</span>
                 </span>
-                <span className="metric-sm" style={{ fontSize: 22 }}>{s.current}</span>
+                <span className="metric-sm" style={{ fontSize: 24 }}>{s.current}</span>
               </div>
             ))}
           </div>
         </>
       )}
 
-      <span className="section-title">Milestones</span>
-      <div className="list">
+      <SectionHeader title="Milestones" />
+      <div className="badge-grid">
         {milestones.map((m) => {
           const got = props.stars.total >= m.need;
           return (
-            <div key={m.title} className="list-item" style={{ cursor: "default" }}>
-              <span
-                className="icon-chip"
-                style={{ background: got ? "var(--accent-soft)" : "var(--surface-2)", color: got ? "var(--accent)" : "var(--ink-3)" }}
-                aria-hidden="true"
-              >
-                <Award size={22} />
-              </span>
-              <span className="title">{m.title}</span>
+            <div key={m.title} className={`badge-card${got ? "" : " dim"}`}>
+              <Art name={m.art} size={52} />
+              <span>{m.title}</span>
               {got ? (
-                <span className="status done"><Check size={14} aria-hidden="true" />Earned</span>
+                <span className="status done"><Check size={12} aria-hidden="true" />Earned</span>
               ) : (
-                <span className="faint small">{Math.max(0, m.need - props.stars.total)} to go</span>
+                <span className="faint">{Math.max(0, m.need - props.stars.total)} to go</span>
               )}
             </div>
           );
         })}
       </div>
-      <p className="tiny faint">All time: {props.stars.total} stars. Sample milestones; the real list will come from the server.</p>
+      <p className="tiny faint">Sample milestones; the real list will come from the server.</p>
     </div>
   );
 }
@@ -756,7 +683,10 @@ function ThemeSwitch() {
   ];
   return (
     <div className="card stack">
-      <span className="eyebrow">Appearance</span>
+      <span className="row" style={{ gap: 8 }}>
+        <Art name={pref === "dark" ? "moon" : "sun"} size={24} />
+        <span className="strong">Appearance</span>
+      </span>
       <div className="segmented" role="group" aria-label="Theme">
         {options.map((o) => (
           <button
@@ -781,6 +711,8 @@ function MeTab(props: {
   pendingCount: number;
   onDuas: () => void;
   onSurahs: () => void;
+  onStories: () => void;
+  onBedtime: () => void;
   simFriday: boolean;
   onSimFriday: (v: boolean) => void;
 }) {
@@ -793,22 +725,16 @@ function MeTab(props: {
   }
   return (
     <div className="screen">
-      <div className="card stack center" style={{ padding: 24 }}>
-        <Avatar id={props.child.avatarId} size={88} />
+      <div className="profile-head">
+        <Avatar id={props.child.avatarId} size={104} ring />
         <h1>{props.child.nickname}</h1>
-        <span className="muted small">Age group {props.child.ageGroup}</span>
+        <span className="band-pill">Age group {props.child.ageGroup}</span>
       </div>
-      <div className="list">
-        <button className="list-item" onClick={props.onDuas}>
-          <CategoryChip category="dua" />
-          <span className="title">My Duas</span>
-          <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
-        </button>
-        <button className="list-item" onClick={props.onSurahs}>
-          <CategoryChip category="quran" />
-          <span className="title">My Surahs</span>
-          <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
-        </button>
+      <div className="action-grid">
+        <button className="action" onClick={props.onDuas}><Art name="palms-up" size={34} />My Duas</button>
+        <button className="action" onClick={props.onSurahs}><Art name="book" size={34} />My Surahs</button>
+        <button className="action" onClick={props.onStories}><Art name="books" size={34} />Stories</button>
+        <button className="action" onClick={props.onBedtime}><Art name="bed" size={34} />Bedtime</button>
       </div>
       <ThemeSwitch />
       {testerToolsEnabled && (
@@ -831,11 +757,13 @@ function MeTab(props: {
           </div>
         </div>
       )}
-      <button className="btn btn-secondary btn-block" style={{ marginTop: "auto", position: "relative" }} onClick={props.onGrownUps}>
-        <Lock size={18} aria-hidden="true" /> Parent area
+      <button className="list-item card" style={{ marginTop: "auto", minHeight: 64 }} onClick={props.onGrownUps}>
+        <Art name="lock" size={32} />
+        <span className="title">Parent area</span>
         {props.pendingCount > 0 && (
           <span className="count-badge" aria-label={`${props.pendingCount} waiting for approval`}>{props.pendingCount}</span>
         )}
+        <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
       </button>
     </div>
   );

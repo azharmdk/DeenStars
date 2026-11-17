@@ -1,26 +1,8 @@
 import { useMemo, useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  BookOpen,
-  CircleHelp,
-  Gift,
-  Hand,
-  HandHeart,
-  Lamp,
-  Landmark,
-  Layers,
-  Library,
-  Moon,
-  Puzzle,
-  Shapes,
-  Star,
-  ToyBrick,
-  TreePalm,
-  Users,
-  X,
-} from "lucide-react";
+import { Puzzle, Sparkles, X } from "lucide-react";
 import { Child } from "../types";
 import { BackLink } from "../components/common";
+import { Art, ArtName, Banner, PageTitle, SectionHeader, Tone } from "../components/ui";
 
 /**
  * Play & Learn UI prototype. Quiz questions are SAMPLE manners scenarios, not reviewed content,
@@ -30,7 +12,7 @@ import { BackLink } from "../components/common";
 
 interface Q {
   prompt: string;
-  Icon: LucideIcon;
+  art: ArtName;
   options: { text: string; correct?: boolean }[];
   explanation: string;
 }
@@ -38,25 +20,25 @@ interface Q {
 const SAMPLE_QUIZ: Q[] = [
   {
     prompt: "Your friend dropped their crayons. What is a kind thing to do?",
-    Icon: HandHeart,
+    art: "heart",
     options: [{ text: "Help pick them up", correct: true }, { text: "Walk away" }, { text: "Laugh at them" }, { text: "Take one" }],
     explanation: "Helping others is kind, and it makes everyone happy.",
   },
   {
     prompt: "Someone gives you a present. What can you say?",
-    Icon: Gift,
+    art: "gift",
     options: [{ text: "Thank you!", correct: true }, { text: "Nothing" }, { text: "I want more" }, { text: "Go away" }],
     explanation: "Saying thank you shows we are grateful.",
   },
   {
     prompt: "You finished playing with your toys. What should you do?",
-    Icon: ToyBrick,
+    art: "teddy",
     options: [{ text: "Put them away", correct: true }, { text: "Leave them everywhere" }, { text: "Hide them" }, { text: "Throw them" }],
     explanation: "Tidying up helps our family and keeps our home nice.",
   },
   {
     prompt: "Your little brother wants to play too. What can you do?",
-    Icon: Users,
+    art: "sparkling-heart",
     options: [{ text: "Share and play together", correct: true }, { text: "Say no" }, { text: "Run away" }, { text: "Shout" }],
     explanation: "Sharing is caring, and playing together is more fun.",
   },
@@ -75,12 +57,12 @@ function shuffle<T>(items: T[]): T[] {
   return a;
 }
 
-const SOON: { title: string; Icon?: LucideIcon; arabic?: string; fg: string; bg: string }[] = [
-  { title: "Dua Matching", Icon: HandHeart, fg: "var(--c-dua)", bg: "var(--c-dua-bg)" },
-  { title: "Build the Masjid", Icon: Landmark, fg: "var(--c-salah)", bg: "var(--c-salah-bg)" },
-  { title: "Arabic Letters", arabic: "أ ب", fg: "var(--c-habit)", bg: "var(--c-habit-bg)" },
-  { title: "Story Sequence", Icon: Library, fg: "var(--c-manners)", bg: "var(--c-manners-bg)" },
-  { title: "Five Pillars", Icon: Hand, fg: "var(--c-deed)", bg: "var(--c-deed-bg)" },
+const SOON: { title: string; art: ArtName; tone: Tone }[] = [
+  { title: "Dua Matching", art: "palms-up", tone: "gold" },
+  { title: "Build the Masjid", art: "mosque", tone: "blue" },
+  { title: "Arabic Letters", art: "bulb", tone: "green" },
+  { title: "Story Sequence", art: "books", tone: "pink" },
+  { title: "Five Pillars", art: "sparkles", tone: "teal" },
 ];
 
 export function PlayTab({ child, onCelebrate }: { child: Child; onCelebrate: (text: string) => void }) {
@@ -90,43 +72,13 @@ export function PlayTab({ child, onCelebrate }: { child: Child; onCelebrate: (te
 
   return (
     <div className="screen">
-      <h1>Play & Learn</h1>
+      <PageTitle title="Play & Learn" />
+      <Banner tone="blue" art="question" wide badge="Quiz" title="Kindness Quiz" sub="4 questions" onClick={() => setMode("quiz")} />
+      <Banner tone="pink" art="cards" wide badge="Game" title="Picture Matching" sub="Find the pairs" onClick={() => setMode("match")} />
+      <SectionHeader title="Coming soon" />
       <div className="grid2">
-        <button className="tile" onClick={() => setMode("quiz")}>
-          <span className="icon-chip" style={{ background: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
-            <CircleHelp size={22} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            Kindness Quiz
-            <span className="sub">4 questions</span>
-          </span>
-        </button>
-        <button className="tile" onClick={() => setMode("match")}>
-          <span className="icon-chip" style={{ background: "var(--c-salah-bg)", color: "var(--c-salah)" }} aria-hidden="true">
-            <Layers size={22} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            Picture Matching
-            <span className="sub">Memory game</span>
-          </span>
-        </button>
-      </div>
-      <span className="section-title">Coming soon</span>
-      <div className="grid2">
-        {SOON.map((s) => (
-          <div key={s.title} className="tile disabled" aria-disabled="true">
-            <span className="icon-chip" style={{ background: s.bg, color: s.fg }} aria-hidden="true">
-              {s.arabic ? (
-                <span className="arabic" dir="rtl" lang="ar" style={{ fontSize: 19, fontWeight: 700 }}>{s.arabic}</span>
-              ) : s.Icon ? (
-                <s.Icon size={22} />
-              ) : null}
-            </span>
-            <span className="stack" style={{ gap: 2 }}>
-              {s.title}
-              <span className="sub">Coming soon</span>
-            </span>
-          </div>
+        {SOON.map((g) => (
+          <Banner key={g.title} tone={g.tone} art={g.art} title={g.title} sub="Coming soon" locked />
         ))}
       </div>
     </div>
@@ -151,9 +103,7 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
   if (finished) {
     return (
       <div className="screen center" style={{ gap: 16 }}>
-        <span className="icon-chip lg" style={{ width: 88, height: 88, borderRadius: 28, background: "var(--accent-soft)", color: "var(--accent)" }} aria-hidden="true">
-          <Star size={44} fill="currentColor" />
-        </span>
+        <Art name="trophy" size={140} className="float" />
         <h1>You learned {questions.length} new things!</h1>
         <p className="muted small">Sample quiz. Quiz stars will come with the reviewed question bank.</p>
         <button className="btn btn-primary btn-child" onClick={() => { setI(0); setPicked(null); setFinished(false); }}>
@@ -178,7 +128,7 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
         <span style={{ width: 44 }} aria-hidden="true" />
       </div>
       <div className="feature-panel" style={{ backgroundColor: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
-        <q.Icon size={60} strokeWidth={1.6} />
+        <Art name={q.art} size={112} />
       </div>
       <span className="eyebrow">Question {i + 1} of {questions.length}</span>
       <h2 style={{ marginTop: -8 }}>{q.prompt}</h2>
@@ -221,13 +171,13 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
   );
 }
 
-const PICTURES: { id: string; label: string; Icon: LucideIcon; fg: string }[] = [
-  { id: "masjid", label: "Masjid", Icon: Landmark, fg: "var(--c-salah)" },
-  { id: "moon", label: "Crescent moon", Icon: Moon, fg: "var(--c-jummah)" },
-  { id: "lantern", label: "Lantern", Icon: Lamp, fg: "var(--c-dua)" },
-  { id: "palm", label: "Date palm", Icon: TreePalm, fg: "var(--c-habit)" },
-  { id: "star", label: "Star", Icon: Star, fg: "var(--accent)" },
-  { id: "book", label: "Book", Icon: BookOpen, fg: "var(--c-quran)" },
+const PICTURES: { id: string; label: string; art: ArtName }[] = [
+  { id: "masjid", label: "Masjid", art: "mosque" },
+  { id: "moon", label: "Crescent moon", art: "moon" },
+  { id: "camel", label: "Camel", art: "camel" },
+  { id: "palm", label: "Date palm", art: "palm" },
+  { id: "star", label: "Star", art: "glowing-star" },
+  { id: "book", label: "Book", art: "book" },
 ];
 
 function MatchGame({ child, onExit, onCelebrate }: { child: Child; onExit: () => void; onCelebrate: (t: string) => void }) {
@@ -283,7 +233,7 @@ function MatchGame({ child, onExit, onCelebrate }: { child: Child; onExit: () =>
               aria-label={show ? c.label : "Hidden card"}
               onClick={() => flip(c)}
             >
-              {show ? <c.Icon size={40} color={c.fg} strokeWidth={1.8} aria-hidden="true" /> : <Shapes size={26} color="rgba(255,255,255,0.55)" aria-hidden="true" />}
+              {show ? <Art name={c.art} size={64} /> : <Sparkles size={28} color="rgba(255,255,255,0.7)" aria-hidden="true" />}
             </button>
           );
         })}

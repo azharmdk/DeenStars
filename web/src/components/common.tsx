@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { AlertCircle, ChevronLeft, Info, Star } from "lucide-react";
+import { Art } from "./ui";
 
 export function PrototypeBanner() {
   return (
@@ -42,9 +43,7 @@ export function Celebration({ stars, text, onDone }: { stars?: number; text: str
   return (
     <div className="celebrate" role="status" aria-live="polite">
       <div className="burst">
-        <div className="ring" aria-hidden="true">
-          <Star size={36} fill="currentColor" strokeWidth={1.5} />
-        </div>
+        <Art name={stars ? "glowing-star" : "party"} size={96} />
         <h2>{text}</h2>
         {stars ? <p className="metric-sm" style={{ color: "var(--accent)" }}>+{stars} stars</p> : null}
       </div>

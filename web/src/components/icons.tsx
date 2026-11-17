@@ -1,95 +1,71 @@
 /**
- * Single source of icons (Lucide, ISC licence, bundled, no network). Placeholder until the
- * commissioned DeenStars illustration and icon set exists (docs/DESIGN_SYSTEM.md section 6).
+ * Icons and art. UI controls use Lucide (ISC licence). Content and avatars use the Fluent Emoji 3D
+ * art set (MIT, self-hosted in public/art). Placeholder until a commissioned DeenStars set exists
+ * (docs/DESIGN_SYSTEM.md section 6). Avatar IDs are stored on child profiles, so keep them stable.
  */
 import type { LucideIcon } from "lucide-react";
-import {
-  Bird,
-  BookOpen,
-  DoorOpen,
-  Flower2,
-  HandHeart,
-  Heart,
-  Lamp,
-  Landmark,
-  Leaf,
-  MoonStar,
-  Moon,
-  Rabbit,
-  Rainbow,
-  Rocket,
-  ShowerHead,
-  Smile,
-  Sparkles,
-  Sprout,
-  Star,
-  Sun,
-  Sunrise,
-  TreePalm,
-  Utensils,
-  Bed,
-  Fish,
-  Cat,
-} from "lucide-react";
+import { BookOpen, HandHeart, Heart, Landmark, MoonStar, Sparkles, Sprout } from "lucide-react";
 import type { Category } from "../types";
+import { Art, ArtName, Tone } from "./ui";
 
-export const CATEGORY_STYLE: Record<Category, { label: string; Icon: LucideIcon; fg: string; bg: string }> = {
-  dailyHabit: { label: "Habits", Icon: Sprout, fg: "var(--c-habit)", bg: "var(--c-habit-bg)" },
-  salah: { label: "Salah", Icon: Landmark, fg: "var(--c-salah)", bg: "var(--c-salah-bg)" },
-  quran: { label: "Quran", Icon: BookOpen, fg: "var(--c-quran)", bg: "var(--c-quran-bg)" },
-  dua: { label: "Duas", Icon: HandHeart, fg: "var(--c-dua)", bg: "var(--c-dua-bg)" },
-  manners: { label: "Manners", Icon: Heart, fg: "var(--c-manners)", bg: "var(--c-manners-bg)" },
-  goodDeed: { label: "Good Deeds", Icon: Sparkles, fg: "var(--c-deed)", bg: "var(--c-deed-bg)" },
-  jummah: { label: "Jummah", Icon: MoonStar, fg: "var(--c-jummah)", bg: "var(--c-jummah-bg)" },
+export const CATEGORY_STYLE: Record<Category, { label: string; Icon: LucideIcon; art: ArtName; tone: Tone; fg: string; bg: string }> = {
+  dailyHabit: { label: "Habits", Icon: Sprout, art: "seedling", tone: "green", fg: "var(--c-habit)", bg: "var(--c-habit-bg)" },
+  salah: { label: "Salah", Icon: Landmark, art: "mosque", tone: "blue", fg: "var(--c-salah)", bg: "var(--c-salah-bg)" },
+  quran: { label: "Quran", Icon: BookOpen, art: "book", tone: "purple", fg: "var(--c-quran)", bg: "var(--c-quran-bg)" },
+  dua: { label: "Duas", Icon: HandHeart, art: "palms-up", tone: "gold", fg: "var(--c-dua)", bg: "var(--c-dua-bg)" },
+  manners: { label: "Manners", Icon: Heart, art: "heart", tone: "pink", fg: "var(--c-manners)", bg: "var(--c-manners-bg)" },
+  goodDeed: { label: "Good Deeds", Icon: Sparkles, art: "sparkling-heart", tone: "teal", fg: "var(--c-deed)", bg: "var(--c-deed-bg)" },
+  jummah: { label: "Jummah", Icon: MoonStar, art: "moon", tone: "night", fg: "var(--c-jummah)", bg: "var(--c-jummah-bg)" },
 };
 
-export function CategoryChip({ category, size = 44 }: { category: Category; size?: number }) {
+/** Category picture on its tinted tile. */
+export function CategoryChip({ category, size = 48 }: { category: Category; size?: number }) {
   const s = CATEGORY_STYLE[category];
   return (
-    <span className="icon-chip" style={{ background: s.bg, color: s.fg, width: size, height: size, borderRadius: size * 0.28 }} aria-hidden="true">
-      <s.Icon size={size * 0.5} strokeWidth={2} />
+    <span className="art-chip" style={{ background: s.bg, width: size, height: size, borderRadius: size * 0.32 }} aria-hidden="true">
+      <Art name={s.art} size={Math.round(size * 0.68)} />
     </span>
   );
 }
 
-/** Avatars: simple icon on a tinted circle. IDs are stored on the child profile. */
-export const AVATAR_STYLES: { id: string; label: string; Icon: LucideIcon; fg: string; bg: string }[] = [
-  { id: "star", label: "Star", Icon: Star, fg: "#9a6410", bg: "#fbf1dc" },
-  { id: "moon", label: "Moon", Icon: Moon, fg: "#2a3a6a", bg: "#e6eaf4" },
-  { id: "sun", label: "Sun", Icon: Sun, fg: "#a2531a", bg: "#fbe9dc" },
-  { id: "leaf", label: "Leaf", Icon: Leaf, fg: "#2f7d5b", bg: "#e6f2ec" },
-  { id: "flower", label: "Flower", Icon: Flower2, fg: "#a1475a", bg: "#f8e8eb" },
-  { id: "bird", label: "Bird", Icon: Bird, fg: "#2f5d8a", bg: "#e5edf6" },
-  { id: "fish", label: "Fish", Icon: Fish, fg: "#1f7377", bg: "#e2f1f1" },
-  { id: "rocket", label: "Rocket", Icon: Rocket, fg: "#4a4f96", bg: "#ecebf7" },
+/** Avatars: art on a tinted circle. */
+export const AVATAR_STYLES: { id: string; label: string; art: ArtName; bg: string }[] = [
+  { id: "star", label: "Star", art: "glowing-star", bg: "#fff2cc" },
+  { id: "moon", label: "Moon", art: "moon", bg: "#e3e8f6" },
+  { id: "sun", label: "Sun", art: "sun", bg: "#ffe8d6" },
+  { id: "leaf", label: "Clover", art: "clover", bg: "#dff4e8" },
+  { id: "flower", label: "Flower", art: "flower", bg: "#fde4ea" },
+  { id: "bird", label: "Bird", art: "bird", bg: "#deecfa" },
+  { id: "fish", label: "Fish", art: "fish", bg: "#d9f1f1" },
+  { id: "rocket", label: "Rocket", art: "rocket", bg: "#e8e8fb" },
+  { id: "cat", label: "Cat", art: "cat", bg: "#fff0c9" },
+  { id: "camel", label: "Camel", art: "camel", bg: "#ffe8d6" },
+  { id: "palm", label: "Palm tree", art: "palm", bg: "#dff4e8" },
+  { id: "rainbow", label: "Rainbow", art: "rainbow", bg: "#e6f0fa" },
 ];
 
 // Older avatar IDs from the first prototype build.
-const LEGACY: Record<string, { Icon: LucideIcon; fg: string; bg: string }> = {
-  lantern: { Icon: Lamp, fg: "#9a6410", bg: "#fbf1dc" },
-  camel: { Icon: Rabbit, fg: "#a2531a", bg: "#fbe9dc" },
-  cat: { Icon: Cat, fg: "#4a4f96", bg: "#ecebf7" },
-  palm: { Icon: TreePalm, fg: "#2f7d5b", bg: "#e6f2ec" },
-  rainbow: { Icon: Rainbow, fg: "#a1475a", bg: "#f8e8eb" },
+const LEGACY: Record<string, { art: ArtName; bg: string }> = {
+  lantern: { art: "night", bg: "#e3e8f6" },
 };
 
-export function Avatar({ id, size = 48 }: { id: string; size?: number }) {
+export function Avatar({ id, size = 48, ring = false }: { id: string; size?: number; ring?: boolean }) {
   const a = AVATAR_STYLES.find((x) => x.id === id) ?? LEGACY[id] ?? AVATAR_STYLES[0];
   return (
-    <span className="avatar" style={{ width: size, height: size, background: a.bg, color: a.fg }} aria-hidden="true">
-      <a.Icon size={size * 0.48} strokeWidth={2} />
+    <span className={`avatar${ring ? " ring" : ""}`} style={{ width: size, height: size, background: a.bg }} aria-hidden="true">
+      <Art name={a.art} size={Math.round(size * 0.66)} />
     </span>
   );
 }
 
-export const DUA_CATEGORY_ICONS: Record<string, LucideIcon> = {
-  eating: Utensils,
-  sleep: Bed,
-  wake: Sunrise,
-  bathroom: ShowerHead,
-  home: DoorOpen,
-  rabbana: HandHeart,
-  smile: Smile,
+export const DUA_CATEGORY_ART: Record<string, ArtName> = {
+  eating: "plate",
+  sleep: "bed",
+  wake: "sunrise",
+  bathroom: "soap",
+  home: "house",
+  rabbana: "palms-up",
+  smile: "smile",
 };
 
 /** Brand mark: crescent and star. Replaces the cartoon mascot until a commissioned mascot exists (D-4). */

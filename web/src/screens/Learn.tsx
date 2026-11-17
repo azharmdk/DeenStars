@@ -4,8 +4,9 @@ import { api } from "../api";
 import { useConfig, useLearningProgress, useLibrary } from "../data";
 import { ArabicText, cleanMeaning } from "../components/ArabicText";
 import { AudioButton, useAudioQueue } from "../components/audio";
-import { BackLink, Notice, ProgressBar } from "../components/common";
-import { DUA_CATEGORY_ICONS } from "../components/icons";
+import { BackLink, Notice } from "../components/common";
+import { DUA_CATEGORY_ART } from "../components/icons";
+import { Art, Banner, SectionHeader } from "../components/ui";
 import { BedtimeScene, Scene } from "../components/scenes";
 import { AGE_BAND_LABEL, ageBandFor, Child, Dua, LEARN_LABEL, LearnState, Story, Surah } from "../types";
 
@@ -107,28 +108,28 @@ export function DuaCorner({ child, onBack }: { child: Child; onBack: () => void 
   return (
     <div className="screen">
       <BackLink onClick={onBack} />
-      <div className="stack" style={{ gap: 10 }}>
-        <h1>Dua Corner</h1>
-        <span className="muted small">{learned} of {items?.length ?? 0} learned</span>
-        <ProgressBar value={items?.length ? learned / items.length : 0} label="Duas learned" />
-      </div>
+      <Banner tone="gold" art="palms-up" wide title="Dua Corner" sub={`${learned} of ${items?.length ?? 0} learned`}>
+        <span className="progress" style={{ background: "rgba(255,255,255,0.28)", marginTop: 8 }}>
+          <span style={{ display: "block", height: "100%", borderRadius: 999, background: "#fff", width: `${items?.length ? (learned / items.length) * 100 : 0}%` }} />
+        </span>
+      </Banner>
       {error && <Notice>We couldn't load the duas. Let's try again in a moment.</Notice>}
       {!items && !error && <p className="muted">Loading…</p>}
       {items &&
         DUA_GROUPS.map((g) => {
           const list = items.filter((d) => d.category === g.id);
           if (list.length === 0) return null;
-          const Icon = DUA_CATEGORY_ICONS[g.id];
+          const art = DUA_CATEGORY_ART[g.id] ?? "palms-up";
           return (
             <div key={g.id} className="stack" style={{ gap: 8 }}>
-              <span className="section-title">{g.label}</span>
+              <SectionHeader title={g.label} />
               <div className="list">
                 {list.map((d) => {
                   const s = progress[d.id] ?? "notStarted";
                   return (
                     <button key={d.id} className="list-item" onClick={() => setOpen(d)}>
-                      <span className="icon-chip" style={{ background: "var(--c-dua-bg)", color: "var(--c-dua)" }} aria-hidden="true">
-                        <Icon size={22} />
+                      <span className="art-chip" style={{ background: "var(--c-dua-bg)", width: 52, height: 52, borderRadius: 16 }} aria-hidden="true">
+                        <Art name={art} size={36} />
                       </span>
                       <span className="stack" style={{ gap: 2, flex: 1 }}>
                         <span className="strong">{d.title}</span>
@@ -206,7 +207,7 @@ export function SurahLearning({ child, onBack }: { child: Child; onBack: () => v
   return (
     <div className="screen">
       <BackLink onClick={onBack} />
-      <h1>Short Surahs</h1>
+      <Banner tone="teal" art="book" wide title="Short Surahs" sub="Listen and repeat" />
       {error && <Notice>We couldn't load the Surahs. Let's try again in a moment.</Notice>}
       {!items && !error && <p className="muted">Loading…</p>}
       <div className="list">
@@ -214,8 +215,8 @@ export function SurahLearning({ child, onBack }: { child: Child; onBack: () => v
           const st = progress[s.id] ?? "notStarted";
           return (
             <button key={s.id} className="list-item" onClick={() => setOpen(s)}>
-              <span className="icon-chip" style={{ background: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
-                <BookOpen size={22} />
+              <span className="art-chip" style={{ background: "var(--c-deed-bg)", width: 52, height: 52, borderRadius: 16 }} aria-hidden="true">
+                <Art name="book" size={36} />
               </span>
               <span className="stack" style={{ gap: 2, flex: 1 }}>
                 <span className="strong">Surah {s.nameTransliterated}</span>
@@ -256,16 +257,14 @@ export function StoryLibrary({ child, onBack, onOpen }: { child: Child; onBack: 
   return (
     <div className="screen">
       <BackLink onClick={onBack} />
-      <div className="stack" style={{ gap: 4 }}>
-        <h1>Stories</h1>
-        <span className="muted small">For {AGE_BAND_LABEL[band]}. A grown-up reads the story aloud, and the verse is recited by a qari.</span>
-      </div>
+      <Banner tone="purple" art="books" wide title="Stories" sub={`For ${AGE_BAND_LABEL[band]}`} />
+      <span className="muted small">A grown-up reads the story aloud, and the verse is recited by a qari.</span>
       {error && <Notice>We couldn't load the stories. Let's try again in a moment.</Notice>}
       {!items && !error && <p className="muted">Loading…</p>}
       <div className="grid2">{mine.map(card)}</div>
       {more.length > 0 && (
         <>
-          <span className="section-title">More stories</span>
+          <SectionHeader title="More stories" />
           <div className="grid2">{more.map(card)}</div>
         </>
       )}
@@ -464,7 +463,7 @@ export function Bedtime({ child, dayKey, onExit }: { child: Child; dayKey: strin
         )}
         {step === "night" && (
           <div className="stack center" style={{ gap: 18, marginTop: 40 }}>
-            <MoonStar size={72} color="#f2c14e" aria-hidden="true" />
+            <Art name="moon" size={120} className="float" />
             <h1>Goodnight, {child.nickname}</h1>
             <p className="muted">Sleep well. See you tomorrow, in sha Allah.</p>
             <button className="btn btn-night" onClick={onExit}>Close</button>

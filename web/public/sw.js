@@ -1,6 +1,6 @@
 ﻿// Minimal service worker: caches the app shell so the installed app opens quickly.
 // Data always comes from Firebase (network). Bump CACHE on each release.
-const CACHE = "deenstars-shell-v3";
+const CACHE = "deenstars-shell-v4";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.webmanifest"])));
@@ -30,7 +30,7 @@ self.addEventListener("fetch", (event) => {
       (hit) =>
         hit ||
         fetch(req).then((res) => {
-          if (res.ok && url.pathname.startsWith("/assets/")) {
+          if (res.ok && (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/art/"))) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(req, copy));
           }

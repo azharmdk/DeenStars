@@ -6,23 +6,30 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { ClipboardList, EyeOff, ShieldCheck, Trash2 } from "lucide-react";
 import { auth } from "../firebase";
 import { api, friendlyError } from "../api";
 import { BackLink, ErrorBox, Notice } from "../components/common";
 import { PinPad } from "../components/PinPad";
 import { AVATAR_STYLES, Avatar, BrandMark } from "../components/icons";
 import { AgeGroup, Difficulty, DIFFICULTY_LABEL } from "../types";
+import { Art, ArtName } from "../components/ui";
 
 export const CONSENT_VERSION = "proto-2025-1";
 
 export function Welcome({ onStart }: { onStart: (mode: "register" | "login") => void }) {
   return (
     <div className="screen no-tabs" style={{ justifyContent: "space-between" }}>
-      <div />
-      <div className="stack center" style={{ gap: 16 }}>
-        <BrandMark size={88} />
-        <h1 style={{ fontSize: 34 }}>DeenStars</h1>
+      <div className="welcome-art" aria-hidden="true">
+        <Art name="mosque" size={170} className="float" style={{ left: "50%", bottom: 8, marginLeft: -85 }} />
+        <Art name="moon" size={84} className="float d2" style={{ left: 22, top: 26 }} />
+        <Art name="glowing-star" size={56} className="float d3" style={{ right: 34, top: 30 }} />
+        <Art name="star" size={34} className="float d2" style={{ right: 96, top: 96 }} />
+        <Art name="palm" size={92} className="float d3" style={{ left: 8, bottom: 6 }} />
+        <Art name="camel" size={80} className="float" style={{ right: 6, bottom: 6 }} />
+      </div>
+      <div className="stack center" style={{ gap: 12 }}>
+        <BrandMark size={64} />
+        <h1 style={{ fontSize: 36 }}>DeenStars</h1>
         <p className="muted" style={{ fontSize: 17, maxWidth: 320 }}>
           Little steps. Beautiful habits. Brighter hearts.
         </p>
@@ -166,10 +173,10 @@ export function ConsentScreen() {
   }
 
   const items = [
-    { Icon: ClipboardList, title: "What we collect", text: "Your email, and for each child a nickname, birth month and year, avatar and learning progress." },
-    { Icon: ShieldCheck, title: "Who can see it", text: "Only you. Children's details are never public." },
-    { Icon: EyeOff, title: "What we never do", text: "No ads, no chat between children, no location tracking, no selling data." },
-    { Icon: Trash2, title: "You're in control", text: "Delete a child's profile and all of its data at any time." },
+    { art: "clipboard" as ArtName, title: "What we collect", text: "Your email, and for each child a nickname, birth month and year, avatar and learning progress." },
+    { art: "shield" as ArtName, title: "Who can see it", text: "Only you. Children's details are never public." },
+    { art: "eyes" as ArtName, title: "What we never do", text: "No ads, no chat between children, no location tracking, no selling data." },
+    { art: "wastebasket" as ArtName, title: "You're in control", text: "Delete a child's profile and all of its data at any time." },
   ];
 
   return (
@@ -180,10 +187,10 @@ export function ConsentScreen() {
         <p className="muted">Please read this before adding a child.</p>
       </div>
       <div className="list">
-        {items.map(({ Icon, title, text }) => (
+        {items.map(({ art, title, text }) => (
           <div className="list-item" key={title} style={{ cursor: "default", alignItems: "flex-start" }}>
-            <span className="icon-chip" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
-              <Icon size={22} />
+            <span className="art-chip" style={{ background: "var(--primary-soft)", width: 52, height: 52, borderRadius: 16 }} aria-hidden="true">
+              <Art name={art} size={34} />
             </span>
             <div className="stack" style={{ gap: 2 }}>
               <h3>{title}</h3>
@@ -245,6 +252,7 @@ export function SetPinScreen() {
 
   return (
     <div className="screen no-tabs center" style={{ gap: 20 }}>
+      <Art name="lock" size={80} />
       <span className="eyebrow">Step 2 of 3</span>
       <h1>{first ? "Confirm your PIN" : "Set a parent PIN"}</h1>
       <p className="muted" style={{ maxWidth: 330 }}>

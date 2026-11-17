@@ -2,11 +2,9 @@ import { useState } from "react";
 import { signOut } from "firebase/auth";
 import {
   CalendarCheck,
-  Check,
   ChevronRight,
   ClipboardCheck,
   LayoutDashboard,
-  Lock,
   LogOut,
   Settings as SettingsIcon,
   UserPlus,
@@ -29,6 +27,8 @@ import { AgeGroup, Approval, Category, Child, Difficulty, DIFFICULTY_LABEL, disp
 import { addDays, dayKeyFor, isFridayDayKey, relativeDayLabel } from "../time";
 import { ChildForm } from "./Onboarding";
 import { HijriSettingsCard, LearningConfirm } from "./ParentLearning";
+import { useCompletionsBetween } from "./Seasonal";
+import { Art, Banner, PageTitle, SectionHeader } from "../components/ui";
 
 /** Parental gate: an adult reading-and-arithmetic check that young children can't easily pass. */
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
@@ -49,9 +49,7 @@ export function ParentGate({ onPass, onCancel }: { onPass: () => void; onCancel:
     <div className="screen no-tabs">
       <BackLink onClick={onCancel} />
       <div className="stack center" style={{ gap: 12, marginTop: 24 }}>
-        <span className="icon-chip lg" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
-          <Lock size={26} />
-        </span>
+        <Art name="lock" size={96} />
         <h1>For grown-ups</h1>
         <p className="muted" style={{ fontSize: 17, maxWidth: 320 }}>
           Tap the number that is <strong style={{ color: "var(--ink)" }}>{WORDS[gate.a]}</strong> plus{" "}
@@ -100,6 +98,7 @@ export function ParentPin({ onSession, onCancel }: { onSession: (id: string, exp
     <div className="screen no-tabs">
       <BackLink onClick={onCancel} />
       <div className="stack center" style={{ gap: 20, marginTop: 16 }}>
+        <Art name="shield" size={72} />
         <h1>Enter your PIN</h1>
         <ErrorBox message={error} />
         <PinPad onComplete={submit} busy={busy} />
@@ -140,7 +139,7 @@ export function ParentApp(props: {
     <>
       <div className="parent-header">
         <span className="row" style={{ gap: 8 }}>
-          <Lock size={16} color="var(--primary)" aria-hidden="true" />
+          <Art name="lock" size={24} />
           <span className="strong">Parent area</span>
         </span>
         <button className="btn btn-soft btn-sm" onClick={props.onExit}>
@@ -154,7 +153,9 @@ export function ParentApp(props: {
       <nav className="tabbar" aria-label="Parent">
         {tabs.map(({ id, Icon, label }) => (
           <button key={id} className="tab" aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>
-            <Icon size={24} strokeWidth={tab === id ? 2.4 : 2} aria-hidden="true" />
+            <span className="tab-icon">
+              <Icon size={24} strokeWidth={tab === id ? 2.4 : 2} aria-hidden="true" />
+            </span>
             {label}
             {id === "approvals" && pendingCount > 0 && (
               <span className="tab-badge" aria-label={`${pendingCount} waiting`}>{pendingCount}</span>
@@ -194,13 +195,14 @@ function WeeklyReport({ child }: { child: Child }) {
   return (
     <div className="card stack" style={{ gap: 12 }}>
       <div className="row" style={{ gap: 12 }}>
-        <Avatar id={child.avatarId} size={44} />
+        <Avatar id={child.avatarId} size={48} />
         <span className="stack" style={{ gap: 2, flex: 1 }}>
           <span className="strong">{child.nickname}</span>
           <span className="small faint">This week</span>
         </span>
         <StarCount n={week.stars} />
       </div>
+      <WeekChart child={child} today={today} />
       {week.items === 0 ? (
         <p className="muted small">Nothing yet this week. A good moment to pick one small thing to do together.</p>
       ) : (
@@ -221,24 +223,41 @@ function WeeklyReport({ child }: { child: Child }) {
   );
 }
 
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Activities done per day for the last 7 days. Neutral styling: an empty day is a plain short bar, never a warning. */
+function WeekChart({ child, today }: { child: Child; today: string }) {
+  const from = addDays(today, -6);
+  const list = useCompletionsBetween(child.id, from, today);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
+  const counts = days.map((d) => list.filter((c) => c.status === "done" && (c as { dayKey?: string }).dayKey === d).length);
+  const max = Math.max(1, ...counts);
+  const total = counts.reduce((a, b) => a + b, 0);
+  return (
+    <div className="chart" role="img" aria-label={`${total} activities done in the last 7 days`}>
+      {days.map((d, i) => {
+        const [y, m, dd] = d.split("-").map(Number);
+        const wd = WEEKDAY[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()];
+        return (
+          <div key={d} className="bar-col" title={`${wd}: ${counts[i]}`}>
+            <div className={`bar${counts[i] === 0 ? " zero" : ""}${d === today ? " today" : ""}`} style={{ height: `${Math.max(8, (counts[i] / max) * 88)}%` }} />
+            <span className="day">{d === today ? "Today" : wd}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function Overview({ children, approvals, onApprovals }: { children: Child[]; approvals: Record<string, Approval[]>; onApprovals: () => void }) {
   const pending = Object.values(approvals).reduce((n, l) => n + l.length, 0);
   return (
     <div className="screen">
-      <h1>Overview</h1>
+      <PageTitle title="Overview" art="sparkles" />
       {pending > 0 && (
-        <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "var(--accent-soft)", borderColor: "#f0dfb5" }} onClick={onApprovals}>
-          <span className="icon-chip" style={{ background: "#fff", color: "var(--accent)" }} aria-hidden="true">
-            <ClipboardCheck size={22} />
-          </span>
-          <span className="stack" style={{ gap: 2, flex: 1 }}>
-            <span>{pending} {pending === 1 ? "activity" : "activities"} to check</span>
-            <span className="sub">Review and approve</span>
-          </span>
-          <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
-        </button>
+        <Banner tone="gold" art="clipboard" wide badge="To check" title={`${pending} ${pending === 1 ? "activity" : "activities"}`} sub="Review and approve" onClick={onApprovals} />
       )}
-      <span className="section-title">Weekly report</span>
+      <SectionHeader title="This week" />
       {children.map((c) => (
         <WeeklyReport key={c.id} child={c} />
       ))}
@@ -300,11 +319,11 @@ function Approvals(props: {
 
   return (
     <div className="screen">
-      <h1>Approvals</h1>
+      <PageTitle title="Approvals" art="clipboard" />
       <ErrorBox message={error} />
       {info && <Notice tone="calm">{info}</Notice>}
       {ask && (
-        <div className="card stack" style={{ gap: 10, borderColor: "#cfe0d9", background: "var(--primary-soft)" }} role="status">
+        <div className="card stack" style={{ gap: 10, borderColor: "transparent", background: "var(--primary-soft)" }} role="status">
           <span className="strong">Did you do this together with {ask.childName}?</span>
           <span className="small muted">Optional. It helps us suggest more family activities.</span>
           <div className="row">
@@ -365,9 +384,7 @@ function Approvals(props: {
       })}
       {days.length === 0 && (
         <div className="card stack center" style={{ padding: 32, gap: 8 }}>
-          <span className="icon-chip lg" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
-            <Check size={28} />
-          </span>
+          <Art name="check" size={72} />
           <h3>All caught up</h3>
           <p className="muted small">Activities your children ask you to check will appear here.</p>
         </div>
@@ -383,7 +400,7 @@ function ChildrenAdmin(props: { children: Child[]; sessionId: string; guarded: <
   if (editing) return <EditChild child={editing} sessionId={props.sessionId} guarded={props.guarded} onDone={() => setEditing(null)} />;
   return (
     <div className="screen">
-      <h1>Children</h1>
+      <PageTitle title="Children" art="sparkling-heart" />
       <div className="list">
         {props.children.map((c) => (
           <button key={c.id} className="list-item" onClick={() => setEditing(c)}>
@@ -526,7 +543,7 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
       <MakeUpYesterday child={c} sessionId={props.sessionId} guarded={props.guarded} />
       <LearningConfirm child={c} sessionId={props.sessionId} guarded={props.guarded} />
 
-      <div className="card stack" style={{ marginTop: 16, borderColor: "#efd3cd" }}>
+      <div className="card stack" style={{ marginTop: 16, borderColor: "var(--danger-soft)" }}>
         <h3>Delete this profile</h3>
         <p className="small muted">This permanently removes {c.nickname}'s profile, stars and progress. It can't be undone.</p>
         <div className="field">
@@ -544,7 +561,7 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
 function Settings(props: { children: Child[]; sessionId: string; guarded: <T>(fn: () => Promise<T>) => Promise<T> }) {
   return (
     <div className="screen">
-      <h1>Settings</h1>
+      <PageTitle title="Settings" art="shield" />
       <span className="section-title">Account</span>
       <div className="list">
         <div className="list-item" style={{ cursor: "default" }}>

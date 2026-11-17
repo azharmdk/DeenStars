@@ -29,7 +29,24 @@ Changed tokens: `primary` #0B7A5C (dark #3CCB9C), `accent` #E0A100, `bg` #F4F8F6
 
 Contrast: white on `primary` is about 5.4:1. Dark theme text is `on-primary` #05241B on #3CCB9C (above 8:1). Check the new category tints in both themes with the accessibility audit before release.
 
-Still open: a commissioned illustration and mascot set (D-4) would add the character-led feel in the references. Until then, icons stand in.
+### v0.3.1 illustrated layout
+
+- **Art set.** Microsoft Fluent Emoji, 3D style, MIT licence (`web/public/art/LICENSE.txt`). Fetched by `web/scripts/fetch-art.mjs` and served from our own hosting, so the app contacts no new network hosts. Only objects, nature and animals are used, never people, so the art can't break the no-depiction rule (section 6). Lucide stays for UI controls such as tabs, chevrons and checks.
+- **Category art.** Habits: seedling. Salah: mosque. Quran: open book. Duas: palms up. Manners: heart. Good Deeds: sparkling heart. Jummah: crescent moon. Avatars are art on a tinted circle. Stored avatar IDs are unchanged, and four were added (cat, camel, palm, rainbow).
+- **Home layout.**
+  - Header with avatar, greeting and a star pill.
+  - Large art-led "Today's deed" hero banner.
+  - "Today" horizontal rail of task cards, not-done first, with done ticks.
+  - "Explore" grid of gradient banners (Dua Corner, Stories, Surahs, Play & Learn) and a wide Bedtime banner.
+- **Banner** (`components/ui.tsx`). Fixed gradient per tone (green, blue, purple, orange, pink, teal, gold, night), white text, art bleeding off the corner, and a solid bottom edge that presses down. Gradients look the same in both themes. Locked banners are desaturated, with a lock badge.
+- **Screens.**
+  - Stars: stat tiles, plus milestone badges that are grey until earned.
+  - Me: large avatar with a ring, a 2×2 action grid, Appearance, and a Parent area row.
+  - Play: the quiz and matching game are wide banners. Coming-soon games are locked banners.
+- **Parent overview.** Adds a 7-day "activities done" bar chart per child. An empty day is a plain short bar with no warning colour, which keeps to the no-failure-state rule. Today's bar is gold.
+- **Dev QA.** `/?gallery=ui&theme=dark` (dev server only) renders the components with sample labels.
+
+Still open: a commissioned illustration and mascot set (D-4) would replace the emoji art with a consistent DeenStars character style.
 
 ## 1. Colour tokens (v0.2 values, see section 0 for current)
 

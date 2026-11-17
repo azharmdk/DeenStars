@@ -129,8 +129,8 @@ function Picker({
             style={{ minHeight: 156, alignItems: "center", justifyContent: "center", gap: 12 }}
             onClick={() => onPick(c)}
           >
-            <Avatar id={c.avatarId} size={72} />
-            <span style={{ fontSize: 18 }}>{c.nickname}</span>
+            <Avatar id={c.avatarId} size={96} ring />
+            <span style={{ fontSize: 19, fontWeight: 800 }}>{c.nickname}</span>
           </button>
         ))}
       </div>
