@@ -129,3 +129,15 @@ Measured from first-party data the app already stores for its function, not from
 ## 9. Decisions requiring your approval
 
 See `OPEN_QUESTIONS_AND_RISKS.md` for the full list with recommendations. The decisions that block coding are D-1 to D-8.
+
+## 10. Product decisions log
+
+| Date | Decision |
+|---|---|
+| 2026-11 | Web prototype (PWA) first on the real dev backend, iOS SwiftUI app later (`ROADMAP.md`). |
+| 2026-11 | Approval: selected items need parent approval, simple habits stay self-reported. May be revisited. |
+| 2026-11 | Pending approvals expire at the end of the next day, silently, with no stars. Replaces the 14-day expiry. |
+| 2026-11 | Streaks are positive only: shown while active and celebrated (for example "Fajr 5 days in a row"). A broken run is never shown. Grace day and parent make-up allowed. Replaces the "no streaks" rule, while keeping the "no guilt" principle. |
+| 2026-11 | No public or global ranking of children. Replaces master spec §16 (anonymous weekly leaderboard). |
+| 2026-11 | On hold: family leaderboard, monthly awards and prizes. |
+| 2026-11 | Retention features added to scope by priority (`ROADMAP.md` Phases 1–6). Random and variable rewards are not adopted. |

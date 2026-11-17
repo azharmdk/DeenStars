@@ -17,7 +17,8 @@ DeenStars is an iOS (SwiftUI) Islamic early-learning app for children aged 3–6
 - Reward writes are idempotent: deterministic ledger IDs, Firestore transactions, `clientRequestId`.
 - Do not hardcode religious content, checklist tasks, star values, quiz questions or milestone rules in the app. They come from Firestore content and `appConfiguration`.
 - Quiz and game stars are participation-based and capped. Repetition must not dominate leaderboards.
-- Leaderboard is opt-in, anonymous, calculated by Cloud Functions. Child-to-child communication does not exist.
+- No public or global ranking of children (decision 2026-11, replaces the anonymous leaderboard). Family leaderboard and monthly awards are on hold. Child-to-child communication does not exist.
+- Streaks are positive only: show and celebrate active runs, never show a broken run. No random or variable rewards, no spending of stars.
 - Parent-only areas need the parental gate and a server-verified parent session.
 - Missed activities show no failure state.
 - Do not imply a child's religious worth depends on stars, milestones or rank.
