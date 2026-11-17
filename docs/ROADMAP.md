@@ -15,7 +15,7 @@ Status: Version 0.2. Re-planned after QE round 1 and the retention requirements.
 |---|---|---|
 | 0 | Planning and environment | Done |
 | 0.5 | Web prototype, QE round 1 | Done |
-| **1** | **Daily habit loop** | **Next** |
+| **1** | **Daily habit loop** | **Built and deployed, waiting for QE sign-off** |
 | 2 | Bedtime and learning | Planned |
 | 3 | Seasonal and weekly themes | Planned. Ramadan deadline, see below |
 | 4 | Rewards that go somewhere | Planned |
