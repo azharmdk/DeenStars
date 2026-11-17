@@ -46,6 +46,15 @@ export const api = {
       decision,
       parentSessionId,
     }),
+  makeUpActivity: (childId: string, activityId: string, parentSessionId: string) =>
+    call<{ status: string; duplicate: boolean; starsAwarded: number; dayKey: string }>("makeUpActivity", {
+      childId,
+      activityId,
+      parentSessionId,
+      clientRequestId: crypto.randomUUID(),
+    }),
+  recordTogether: (childId: string, approvalId: string, together: boolean, parentSessionId: string) =>
+    call<{ ok: true }>("recordTogether", { childId, approvalId, together, parentSessionId }),
 };
 
 /** Friendly message for errors. Child-facing screens never show raw errors. */

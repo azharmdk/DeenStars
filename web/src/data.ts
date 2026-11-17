@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, doc, getDocs, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import type { Activity, Approval, Child, Completion } from "./types";
-import { dayKeyFor, weekKeyFromDayKey } from "./time";
+import type { Activity, Approval, Category, Child, Completion, Streak } from "./types";
+import { dayKeyFor, daysOfWeek, weekKeyFromDayKey } from "./time";
 
 export function useAuthUser(): { user: User | null; ready: boolean } {
   const [state, setState] = useState<{ user: User | null; ready: boolean }>({ user: null, ready: false });
@@ -67,8 +67,8 @@ export function useActivities() {
   return { activities, error };
 }
 
+/** Current local day for a child. Recomputed on focus and every minute so the day rolls over. */
 export function useToday(child: Child) {
-  // Recompute when the tab regains focus so the day rolls over correctly.
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const onVis = () => setNow(new Date());
@@ -83,7 +83,7 @@ export function useToday(child: Child) {
   return { dayKey, weekKey: weekKeyFromDayKey(dayKey), now };
 }
 
-export function useTodayCompletions(childId: string, dayKey: string) {
+export function useCompletionsForDay(childId: string, dayKey: string) {
   const [map, setMap] = useState<Record<string, Completion>>({});
   useEffect(() => {
     const q = query(collection(db, "children", childId, "checklistCompletions"), where("dayKey", "==", dayKey));
@@ -99,42 +99,91 @@ export function useTodayCompletions(childId: string, dayKey: string) {
   return map;
 }
 
-export function useStarRollups(childId: string, dayKey: string, weekKey: string) {
-  const [stars, setStars] = useState({ total: 0, today: 0, week: 0, month: 0 });
-  useEffect(() => {
-    return onSnapshot(collection(db, "children", childId, "rollups"), (snap) => {
-      const get = (id: string) => (snap.docs.find((d) => d.id === id)?.data()?.stars as number | undefined) ?? 0;
-      setStars({
-        total: get("total"),
-        today: get(`d_${dayKey}`),
-        week: get(`w_${weekKey}`),
-        month: get(`m_${dayKey.slice(0, 7)}`),
-      });
-    });
-  }, [childId, dayKey, weekKey]);
-  return stars;
+export const useTodayCompletions = useCompletionsForDay;
+
+interface RollupDoc {
+  stars?: number;
+  count?: number;
+  countByCategory?: Partial<Record<Category, number>>;
 }
 
+function useRollups(childId: string) {
+  const [docs, setDocs] = useState<Record<string, RollupDoc>>({});
+  useEffect(() => {
+    return onSnapshot(collection(db, "children", childId, "rollups"), (snap) => {
+      const next: Record<string, RollupDoc> = {};
+      snap.docs.forEach((d) => (next[d.id] = d.data() as RollupDoc));
+      setDocs(next);
+    });
+  }, [childId]);
+  return docs;
+}
+
+export function useStarRollups(childId: string, dayKey: string, weekKey: string) {
+  const docs = useRollups(childId);
+  return {
+    total: docs.total?.stars ?? 0,
+    today: docs[`d_${dayKey}`]?.stars ?? 0,
+    week: docs[`w_${weekKey}`]?.stars ?? 0,
+    month: docs[`m_${dayKey.slice(0, 7)}`]?.stars ?? 0,
+  };
+}
+
+export interface WeekSummary {
+  stars: number;
+  items: number;
+  activeDays: number;
+  byCategory: Partial<Record<Category, number>>;
+}
+
+/** Weekly report numbers, read from server-written rollups. */
+export function useWeekSummary(child: Child, dayKey: string): WeekSummary {
+  const docs = useRollups(child.id);
+  const week = docs[`w_${weekKeyFromDayKey(dayKey)}`];
+  const activeDays = daysOfWeek(dayKey).filter((d) => (docs[`d_${d}`]?.stars ?? 0) > 0).length;
+  return { stars: week?.stars ?? 0, items: week?.count ?? 0, activeDays, byCategory: week?.countByCategory ?? {} };
+}
+
+export function useStreaks(childId: string) {
+  const [streaks, setStreaks] = useState<Record<string, Streak>>({});
+  useEffect(() => {
+    return onSnapshot(collection(db, "children", childId, "streaks"), (snap) => {
+      const next: Record<string, Streak> = {};
+      snap.docs.forEach((d) => (next[d.id] = d.data() as Streak));
+      setStreaks(next);
+    });
+  }, [childId]);
+  return streaks;
+}
+
+/** Pending approvals for each child. Items past their expiry are hidden (the server expires them). */
 export function usePendingApprovals(children: Child[]) {
   const [byChild, setByChild] = useState<Record<string, Approval[]>>({});
+  const [now, setNow] = useState(() => Date.now());
   const ids = useMemo(() => children.map((c) => c.id).join(","), [children]);
   useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
     const unsubs = children.map((c) =>
-      onSnapshot(
-        query(collection(db, "children", c.id, "parentApprovals"), where("status", "==", "pending")),
-        (snap) =>
-          setByChild((prev) => ({
-            ...prev,
-            [c.id]: snap.docs
-              .map((d) => ({ id: d.id, childId: c.id, ...(d.data() as Omit<Approval, "id" | "childId">) }))
-              .sort((a, b) => b.dayKey.localeCompare(a.dayKey)),
-          })),
+      onSnapshot(query(collection(db, "children", c.id, "parentApprovals"), where("status", "==", "pending")), (snap) =>
+        setByChild((prev) => ({
+          ...prev,
+          [c.id]: snap.docs.map((d) => ({ id: d.id, childId: c.id, ...(d.data() as Omit<Approval, "id" | "childId">) })),
+        })),
       ),
     );
     return () => unsubs.forEach((u) => u());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids]);
-  return byChild;
+  return useMemo(() => {
+    const live: Record<string, Approval[]> = {};
+    for (const [k, list] of Object.entries(byChild)) {
+      live[k] = list.filter((a) => !a.expiresAt || a.expiresAt.toMillis() > now);
+    }
+    return live;
+  }, [byChild, now]);
 }
 
 /** Activities a child sees today: matching age group; Jummah items only on Friday (or simulated Friday). */
@@ -142,4 +191,17 @@ export function activitiesForChild(all: Activity[], child: Child, friday: boolea
   return all.filter(
     (a) => a.ageEligibility?.ageGroups?.includes(child.ageGroup) && (a.frequency !== "jummahOnly" || friday),
   );
+}
+
+/**
+ * "Today" moment: one featured item per day, chosen deterministically from the child's list so it is
+ * stable all day. Prefers "do it together" deeds and good deeds. Content stays data-driven.
+ */
+export function featuredForDay(items: Activity[], dayKey: string): Activity | undefined {
+  const pool = items.filter((a) => a.together || a.category === "goodDeed");
+  const list = pool.length ? pool : items;
+  if (list.length === 0) return undefined;
+  let h = 0;
+  for (const ch of dayKey) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return list[h % list.length];
 }

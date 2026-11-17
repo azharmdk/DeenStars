@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth, usingEmulators } from "./firebase";
-import { useAuthUser, useChildren, useParentDoc } from "./data";
+import { useAuthUser, useChildren, useParentDoc, usePendingApprovals } from "./data";
 import { Loading, PrototypeBanner } from "./components/common";
 import { Lock } from "lucide-react";
 import { Avatar, BrandMark } from "./components/icons";
@@ -44,6 +44,8 @@ function Root() {
 function SignedIn({ uid }: { uid: string }) {
   const parent = useParentDoc(uid);
   const { children, ready } = useChildren(uid);
+  const pending = usePendingApprovals(children);
+  const pendingCount = Object.values(pending).reduce((n, l) => n + l.length, 0);
   const [mode, setMode] = useState<Mode>(() => {
     const last = localStorage.getItem(LAST_CHILD_KEY);
     return last ? { kind: "child", childId: last } : { kind: "picker" };
@@ -65,7 +67,7 @@ function SignedIn({ uid }: { uid: string }) {
   if (mode.kind === "child") {
     const child = children.find((c) => c.id === mode.childId);
     if (child) {
-      return <ChildApp key={child.id} child={child} onGrownUps={() => setMode({ kind: "gate" })} />;
+      return <ChildApp key={child.id} child={child} pendingCount={pendingCount} onGrownUps={() => setMode({ kind: "gate" })} />;
     }
   }
   if (mode.kind === "gate") {
@@ -97,11 +99,22 @@ function SignedIn({ uid }: { uid: string }) {
         setMode({ kind: "child", childId: c.id });
       }}
       onGrownUps={() => setMode({ kind: "gate" })}
+      pendingCount={pendingCount}
     />
   );
 }
 
-function Picker({ children, onPick, onGrownUps }: { children: Child[]; onPick: (c: Child) => void; onGrownUps: () => void }) {
+function Picker({
+  children,
+  onPick,
+  onGrownUps,
+  pendingCount,
+}: {
+  children: Child[];
+  onPick: (c: Child) => void;
+  onGrownUps: () => void;
+  pendingCount: number;
+}) {
   return (
     <div className="screen no-tabs">
       <div className="stack center" style={{ gap: 12, marginTop: 16 }}>
@@ -127,6 +140,9 @@ function Picker({ children, onPick, onGrownUps }: { children: Child[]; onPick: (
         </button>
         <button className="btn btn-secondary" onClick={onGrownUps}>
           <Lock size={16} aria-hidden="true" /> Parent area
+          {pendingCount > 0 && (
+            <span className="count-badge" aria-label={`${pendingCount} waiting for approval`}>{pendingCount}</span>
+          )}
         </button>
       </div>
     </div>

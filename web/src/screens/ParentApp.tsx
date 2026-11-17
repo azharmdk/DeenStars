@@ -1,13 +1,32 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { signOut } from "firebase/auth";
-import { Check, ChevronRight, ClipboardCheck, LayoutDashboard, Lock, LogOut, Settings as SettingsIcon, UserPlus, Users } from "lucide-react";
+import {
+  CalendarCheck,
+  Check,
+  ChevronRight,
+  ClipboardCheck,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Settings as SettingsIcon,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { auth } from "../firebase";
 import { api, friendlyError } from "../api";
-import { usePendingApprovals } from "../data";
+import {
+  activitiesForChild,
+  useActivities,
+  useCompletionsForDay,
+  usePendingApprovals,
+  useStreaks,
+  useWeekSummary,
+} from "../data";
 import { BackLink, ErrorBox, Notice, StarCount } from "../components/common";
 import { PinPad } from "../components/PinPad";
-import { Avatar } from "../components/icons";
-import { AgeGroup, Approval, Child, Difficulty, DIFFICULTY_LABEL, displayTitle } from "../types";
+import { Avatar, CategoryChip } from "../components/icons";
+import { AgeGroup, Approval, Category, Child, Difficulty, DIFFICULTY_LABEL, displayTitle, isStreakActive } from "../types";
+import { addDays, dayKeyFor, isFridayDayKey, relativeDayLabel } from "../time";
 import { ChildForm } from "./Onboarding";
 
 /** Parental gate: an adult reading-and-arithmetic check that young children can't easily pass. */
@@ -146,6 +165,61 @@ export function ParentApp(props: {
   );
 }
 
+const CATEGORY_PHRASE: Partial<Record<Category, [string, string]>> = {
+  goodDeed: ["good deed", "good deeds"],
+  manners: ["act of good manners", "acts of good manners"],
+  dailyHabit: ["daily habit", "daily habits"],
+  salah: ["Salah activity", "Salah activities"],
+  quran: ["Quran activity", "Quran activities"],
+  dua: ["dua activity", "dua activities"],
+  jummah: ["Jummah activity", "Jummah activities"],
+};
+
+/** In-app weekly report: positive framing, numbers from server-written rollups. */
+function WeeklyReport({ child }: { child: Child }) {
+  const today = dayKeyFor(new Date(), child.timeZone);
+  const week = useWeekSummary(child, today);
+  const streaks = useStreaks(child.id);
+  const { activities } = useActivities();
+  const active = Object.values(streaks).filter((s) => isStreakActive(s, today)).sort((a, b) => b.current - a.current);
+  const best = active[0];
+  const bestTitle = best ? displayTitle(activities?.find((a) => a.id === best.activityId)?.title.en ?? "an activity") : null;
+  const parts = (Object.entries(week.byCategory) as [Category, number][])
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([cat, n]) => `${n} ${CATEGORY_PHRASE[cat]?.[n === 1 ? 0 : 1] ?? "activities"}`);
+
+  return (
+    <div className="card stack" style={{ gap: 12 }}>
+      <div className="row" style={{ gap: 12 }}>
+        <Avatar id={child.avatarId} size={44} />
+        <span className="stack" style={{ gap: 2, flex: 1 }}>
+          <span className="strong">{child.nickname}</span>
+          <span className="small faint">This week</span>
+        </span>
+        <StarCount n={week.stars} />
+      </div>
+      {week.items === 0 ? (
+        <p className="muted small">Nothing yet this week. A good moment to pick one small thing to do together.</p>
+      ) : (
+        <p style={{ fontSize: 15.5 }}>
+          This week {child.nickname} did {parts.length ? parts.join(", ") : `${week.items} activities`}
+          {` and was active on ${week.activeDays} ${week.activeDays === 1 ? "day" : "days"}.`}
+        </p>
+      )}
+      {best && (
+        <div className="row small" style={{ gap: 8, color: "var(--primary-strong)" }}>
+          <CalendarCheck size={16} aria-hidden="true" />
+          <span>
+            {bestTitle}: {best.current} days in a row
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Overview({ children, approvals, onApprovals }: { children: Child[]; approvals: Record<string, Approval[]>; onApprovals: () => void }) {
   const pending = Object.values(approvals).reduce((n, l) => n + l.length, 0);
   return (
@@ -163,19 +237,10 @@ function Overview({ children, approvals, onApprovals }: { children: Child[]; app
           <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
         </button>
       )}
-      <span className="section-title">Children</span>
-      <div className="list">
-        {children.map((c) => (
-          <div key={c.id} className="list-item" style={{ cursor: "default" }}>
-            <Avatar id={c.avatarId} size={44} />
-            <span className="stack" style={{ gap: 2, flex: 1 }}>
-              <span className="strong">{c.nickname}</span>
-              <span className="small faint">Age {c.ageGroup} · {DIFFICULTY_LABEL[c.difficulty]}</span>
-            </span>
-            <StarCount n={c.totals?.stars ?? 0} />
-          </div>
-        ))}
-      </div>
+      <span className="section-title">Weekly report</span>
+      {children.map((c) => (
+        <WeeklyReport key={c.id} child={c} />
+      ))}
     </div>
   );
 }
@@ -188,12 +253,23 @@ function Approvals(props: {
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  // Optional "Did you do this together?" prompt, shown on about 1 in 5 approvals. Never blocks.
+  const [ask, setAsk] = useState<{ approval: Approval; childName: string } | null>(null);
 
-  async function decide(a: Approval, decision: "approve" | "decline") {
+  const childById = Object.fromEntries(props.children.map((c) => [c.id, c]));
+  const today = dayKeyFor(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+  async function decide(a: Approval, decision: "approve" | "decline", allowPrompt = true) {
     setBusy(a.id + a.childId);
     setError(null);
+    setInfo(null);
     try {
-      await props.guarded(() => api.decideApproval(a.childId, a.id, decision, props.sessionId));
+      const res = await props.guarded(() => api.decideApproval(a.childId, a.id, decision, props.sessionId));
+      if (res.status === "expired") setInfo("That one had expired, so it was cleared without a star.");
+      if (res.status === "approved" && !res.duplicate && allowPrompt && Math.random() < 0.2) {
+        setAsk({ approval: a, childName: childById[a.childId]?.nickname ?? "your child" });
+      }
     } catch (e) {
       setError(friendlyError(e));
     } finally {
@@ -201,18 +277,92 @@ function Approvals(props: {
     }
   }
 
-  async function approveAll(child: Child) {
-    for (const a of props.approvals[child.id] ?? []) {
-      await decide(a, "approve");
+  async function approveGroup(list: Approval[]) {
+    for (const a of list) {
+      await decide(a, "approve", false);
     }
   }
 
-  const any = props.children.some((c) => (props.approvals[c.id]?.length ?? 0) > 0);
+  function answerTogether(together: boolean) {
+    const a = ask?.approval;
+    setAsk(null);
+    if (!a) return;
+    // Fire and forget: the answer is optional and must never get in the way.
+    api.recordTogether(a.childId, a.id, together, props.sessionId).catch(() => undefined);
+  }
+
+  // Group by day (newest first), then by request time.
+  const all = Object.values(props.approvals).flat();
+  const days = Array.from(new Set(all.map((a) => a.dayKey))).sort().reverse();
+  const timeOf = (a: Approval) =>
+    a.requestedAt ? new Date(a.requestedAt.toMillis()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+
   return (
     <div className="screen">
       <h1>Approvals</h1>
       <ErrorBox message={error} />
-      {!any && (
+      {info && <Notice tone="calm">{info}</Notice>}
+      {ask && (
+        <div className="card stack" style={{ gap: 10, borderColor: "#cfe0d9", background: "var(--primary-soft)" }} role="status">
+          <span className="strong">Did you do this together with {ask.childName}?</span>
+          <span className="small muted">Optional. It helps us suggest more family activities.</span>
+          <div className="row">
+            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => answerTogether(false)}>
+              Not this time
+            </button>
+            <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => answerTogether(true)}>
+              Yes
+            </button>
+          </div>
+        </div>
+      )}
+      {days.length > 0 && (
+        <p className="small faint">Items you don't get to stay here until the end of the next day.</p>
+      )}
+      {days.map((day) => {
+        const list = all
+          .filter((a) => a.dayKey === day)
+          .sort((x, y) => (y.requestedAt?.toMillis() ?? 0) - (x.requestedAt?.toMillis() ?? 0));
+        return (
+          <div key={day} className="stack" style={{ gap: 10 }}>
+            <div className="row between">
+              <span className="section-title" style={{ margin: 0 }}>{relativeDayLabel(day, today)}</span>
+              {list.length > 1 && (
+                <button className="btn btn-soft btn-sm" onClick={() => approveGroup(list)} disabled={!!busy}>
+                  Approve all
+                </button>
+              )}
+            </div>
+            {list.map((a) => {
+              const c = childById[a.childId];
+              return (
+                <div key={a.childId + a.id} className="card stack" style={{ gap: 12 }}>
+                  <div className="row" style={{ alignItems: "flex-start", gap: 12 }}>
+                    {c && <Avatar id={c.avatarId} size={36} />}
+                    <span className="stack" style={{ gap: 2, flex: 1 }}>
+                      <span className="strong">{displayTitle(a.activityTitleSnapshot?.en ?? "")}</span>
+                      <span className="small faint">
+                        {c?.nickname}
+                        {timeOf(a) ? ` · ${timeOf(a)}` : ""}
+                      </span>
+                    </span>
+                    <StarCount n={a.stars} size={16} />
+                  </div>
+                  <div className="row">
+                    <button className="btn btn-secondary" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "decline")}>
+                      Not yet
+                    </button>
+                    <button className="btn btn-primary" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "approve")}>
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      {days.length === 0 && (
         <div className="card stack center" style={{ padding: 32, gap: 8 }}>
           <span className="icon-chip lg" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
             <Check size={28} />
@@ -221,44 +371,6 @@ function Approvals(props: {
           <p className="muted small">Activities your children ask you to check will appear here.</p>
         </div>
       )}
-      {props.children.map((c) => {
-        const list = props.approvals[c.id] ?? [];
-        if (list.length === 0) return null;
-        return (
-          <div key={c.id} className="stack" style={{ gap: 10 }}>
-            <div className="row between">
-              <span className="row" style={{ gap: 10 }}>
-                <Avatar id={c.avatarId} size={32} />
-                <h3>{c.nickname}</h3>
-              </span>
-              {list.length > 1 && (
-                <button className="btn btn-soft btn-sm" onClick={() => approveAll(c)} disabled={!!busy}>
-                  Approve all
-                </button>
-              )}
-            </div>
-            {list.map((a) => (
-              <div key={a.id} className="card stack" style={{ gap: 12 }}>
-                <div className="row between" style={{ alignItems: "flex-start" }}>
-                  <span className="stack" style={{ gap: 2 }}>
-                    <span className="strong">{displayTitle(a.activityTitleSnapshot?.en ?? "")}</span>
-                    <span className="small faint">{a.dayKey}</span>
-                  </span>
-                  <StarCount n={a.stars} size={16} />
-                </div>
-                <div className="row">
-                  <button className="btn btn-secondary" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "decline")}>
-                    Not yet
-                  </button>
-                  <button className="btn btn-primary" style={{ flex: 1 }} disabled={busy === a.id + a.childId} onClick={() => decide(a, "approve")}>
-                    Approve
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -286,6 +398,64 @@ function ChildrenAdmin(props: { children: Child[]; sessionId: string; guarded: <
       <button className="btn btn-primary btn-block" onClick={() => setAdding(true)}>
         <UserPlus size={18} aria-hidden="true" /> Add a child
       </button>
+    </div>
+  );
+}
+
+/**
+ * Make-up: a parent can mark yesterday's activities as done, for days when the app wasn't opened.
+ * Only yesterday. Keeps streaks going. The server checks the parent session and awards once.
+ */
+function MakeUpYesterday(props: { child: Child; sessionId: string; guarded: <T>(fn: () => Promise<T>) => Promise<T> }) {
+  const c = props.child;
+  const yesterday = addDays(dayKeyFor(new Date(), c.timeZone), -1);
+  const { activities } = useActivities();
+  const done = useCompletionsForDay(c.id, yesterday);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const items = activities ? activitiesForChild(activities, c, isFridayDayKey(yesterday)) : [];
+  const missed = items.filter((a) => done[a.id]?.status !== "done");
+
+  async function mark(activityId: string) {
+    setBusy(activityId);
+    setError(null);
+    try {
+      await props.guarded(() => api.makeUpActivity(c.id, activityId, props.sessionId));
+    } catch (e) {
+      setError(friendlyError(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="card stack" style={{ marginTop: 16 }}>
+      <span className="stack" style={{ gap: 2 }}>
+        <h3>Missed yesterday?</h3>
+        <span className="small muted">Mark what {c.nickname} did yesterday. It keeps their days in a row going.</span>
+      </span>
+      {!open ? (
+        <button className="btn btn-soft btn-block" onClick={() => setOpen(true)}>
+          Show yesterday's activities
+        </button>
+      ) : missed.length === 0 ? (
+        <Notice tone="calm">Everything from yesterday is already marked.</Notice>
+      ) : (
+        <div className="list">
+          {missed.map((a) => (
+            <div key={a.id} className="list-item" style={{ cursor: "default" }}>
+              <CategoryChip category={a.category} size={36} />
+              <span className="title">{displayTitle(a.title.en)}</span>
+              <button className="btn btn-soft btn-sm" disabled={busy === a.id} onClick={() => mark(a.id)}>
+                {busy === a.id ? "Saving…" : "Mark done"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <ErrorBox message={error} />
     </div>
   );
 }
@@ -351,6 +521,8 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
       </div>
       <ErrorBox message={error} />
       <button className="btn btn-primary btn-block" disabled={busy} onClick={save}>Save changes</button>
+
+      <MakeUpYesterday child={c} sessionId={props.sessionId} guarded={props.guarded} />
 
       <div className="card stack" style={{ marginTop: 16, borderColor: "#efd3cd" }}>
         <h3>Delete this profile</h3>

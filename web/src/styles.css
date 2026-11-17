@@ -314,13 +314,19 @@ svg { flex-shrink: 0; }
 .status.pending { background: var(--accent-soft); color: #6b4a07; }
 .status.todo { background: var(--surface-2); color: var(--ink-2); }
 .status.declined { background: var(--info-soft); color: #23405e; }
+.status.streak { background: var(--primary-soft); color: var(--primary-strong); }
+.status.together { background: var(--c-salah-bg); color: var(--c-salah); }
+.count-badge {
+  background: var(--ink); color: #fff; border-radius: 10px; font-size: 12px; font-weight: 700;
+  min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center;
+}
 
 .check-circle {
   width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .check-circle.done { background: var(--primary); border-color: var(--primary); color: #fff; }
-.check-circle.pending { border-color: var(--accent); color: var(--accent); }
+.check-circle.pending { border-color: var(--accent); color: var(--accent); border-style: dashed; }
 
 /* Category filter row */
 .filter-row {

@@ -30,6 +30,8 @@ interface Seed {
   verification: "self" | "parent";
   ages: ("3-4" | "5" | "6")[];
   frequency?: "daily" | "jummahOnly";
+  /** "Do it together" deeds: designed for parent and child jointly. */
+  together?: boolean;
 }
 
 const ALL: Seed["ages"] = ["3-4", "5", "6"];
@@ -41,7 +43,9 @@ const seeds: Seed[] = [
   { id: "act_habit_salam", title: "Say Assalamu Alaikum", category: "dailyHabit", ruleKey: "habit_simple", verification: "self", ages: ALL },
   { id: "act_habit_remember_allah", title: "Remember Allah during the day", category: "dailyHabit", ruleKey: "habit_simple", verification: "self", ages: OLDER },
   { id: "act_salah_names", title: "Learn the names of the five daily prayers", category: "salah", ruleKey: "habit_simple", verification: "parent", ages: OLDER },
-  { id: "act_salah_family", title: "Join family prayer routine", category: "salah", ruleKey: "habit_simple", verification: "parent", ages: ALL },
+  { id: "act_salah_family", title: "Join family prayer routine", category: "salah", ruleKey: "habit_simple", verification: "parent", ages: ALL, together: true },
+  // Wording to be confirmed by the content reviewer: learning framing for young children, not obligation.
+  { id: "act_salah_fajr_family", title: "Pray Fajr with family", category: "salah", ruleKey: "habit_simple", verification: "parent", ages: OLDER, together: true },
   { id: "act_quran_listen", title: "Listen to a short Quran recitation", category: "quran", ruleKey: "habit_simple", verification: "parent", ages: ALL },
   { id: "act_quran_practise", title: "Practise a familiar Surah", category: "quran", ruleKey: "habit_simple", verification: "parent", ages: ["6"] },
   { id: "act_manners_listen", title: "Listen to parents", category: "manners", ruleKey: "manners", verification: "parent", ages: ALL },
@@ -49,9 +53,10 @@ const seeds: Seed[] = [
   { id: "act_manners_please_thanks", title: "Say please and thank you", category: "manners", ruleKey: "manners", verification: "self", ages: ALL },
   { id: "act_manners_share_toys", title: "Share toys", category: "manners", ruleKey: "manners", verification: "parent", ages: ALL },
   { id: "act_deed_help_parents", title: "Help Mommy or Daddy", category: "goodDeed", ruleKey: "good_deed", verification: "parent", ages: ALL },
+  { id: "act_deed_set_table", title: "Help set the table", category: "goodDeed", ruleKey: "good_deed", verification: "parent", ages: ALL, together: true },
   { id: "act_deed_toys_away", title: "Put toys away", category: "goodDeed", ruleKey: "good_deed", verification: "parent", ages: ALL },
   { id: "act_deed_make_smile", title: "Make someone smile", category: "goodDeed", ruleKey: "good_deed", verification: "parent", ages: ALL },
-  { id: "act_deed_charity", title: "Give charity with parents", category: "goodDeed", ruleKey: "good_deed", verification: "parent", ages: OLDER },
+  { id: "act_deed_charity", title: "Give charity with parents", category: "goodDeed", ruleKey: "good_deed", verification: "parent", ages: OLDER, together: true },
   { id: "act_jummah_ready", title: "Get ready for Jummah", category: "jummah", ruleKey: "habit_simple", verification: "self", ages: ALL, frequency: "jummahOnly" },
   { id: "act_jummah_clean_clothes", title: "Wear clean clothes", category: "jummah", ruleKey: "habit_simple", verification: "self", ages: ALL, frequency: "jummahOnly" },
   { id: "act_jummah_reminder", title: "Listen to a short Islamic reminder", category: "jummah", ruleKey: "habit_simple", verification: "parent", ages: ALL, frequency: "jummahOnly" },
@@ -72,6 +77,7 @@ export function buildDevActivities() {
       starRuleKey: s.ruleKey,
       verification: s.verification,
       frequency: s.frequency ?? "daily",
+      together: s.together ?? false,
       isReligiousContent: true,
       isPlaceholder: true,
       status: "approved", // dev only. Real content follows the review workflow.

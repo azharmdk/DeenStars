@@ -1,25 +1,35 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Award,
+  CalendarCheck,
   Check,
   ChevronRight,
-  Clock,
   HandHeart,
   House,
   ListChecks,
+  Lock,
   MoonStar,
   Puzzle,
   Sparkles,
   Star,
   Trophy,
   User,
+  Users,
   Volume2,
 } from "lucide-react";
 import { api } from "../api";
-import { activitiesForChild, useActivities, useStarRollups, useToday, useTodayCompletions } from "../data";
+import {
+  activitiesForChild,
+  featuredForDay,
+  useActivities,
+  useStarRollups,
+  useStreaks,
+  useToday,
+  useTodayCompletions,
+} from "../data";
 import { BackLink, Celebration, ListenButton, Notice, ProgressBar, Sheet, speak } from "../components/common";
 import { Avatar, CATEGORY_STYLE, CategoryChip } from "../components/icons";
-import { Activity, Category, Child, Completion, displayTitle } from "../types";
+import { Activity, Category, Child, Completion, displayTitle, isStreakActive, Streak, STREAK_CELEBRATIONS } from "../types";
 import { greetingForHour, isFridayDayKey } from "../time";
 import { PlayTab } from "./Play";
 import { DuaCorner } from "./DuaCorner";
@@ -30,7 +40,7 @@ type Sub = null | "jummah" | "duas";
 
 const SIM_FRIDAY_KEY = "ds_sim_friday";
 
-export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () => void }) {
+export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; onGrownUps: () => void; pendingCount: number }) {
   const [tab, setTab] = useState<Tab>("home");
   const [sub, setSub] = useState<Sub>(null);
   const [simFriday, setSimFriday] = useState(() => testerToolsEnabled && localStorage.getItem(SIM_FRIDAY_KEY) === "1");
@@ -39,11 +49,25 @@ export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () =
   const { activities, error } = useActivities();
   const completions = useTodayCompletions(child.id, dayKey);
   const stars = useStarRollups(child.id, dayKey, weekKey);
+  const streaks = useStreaks(child.id);
   const mine = useMemo(() => (activities ? activitiesForChild(activities, child, friday) : []), [activities, child, friday]);
 
   const [open, setOpen] = useState<Activity | null>(null);
   const [celebrate, setCelebrate] = useState<{ text: string; stars?: number } | null>(null);
   const endCelebration = useCallback(() => setCelebrate(null), []);
+
+  // Celebrate streak milestones once, on the day they are reached.
+  useEffect(() => {
+    for (const s of Object.values(streaks)) {
+      if (s.lastDoneDayKey !== dayKey || !STREAK_CELEBRATIONS.includes(s.current)) continue;
+      const key = `ds_streak_cheer_${child.id}_${s.activityId}_${dayKey}`;
+      if (localStorage.getItem(key)) continue;
+      localStorage.setItem(key, "1");
+      const a = activities?.find((x) => x.id === s.activityId);
+      setCelebrate({ text: `${s.current} days in a row${a ? `: ${displayTitle(a.title.en)}` : ""}!` });
+      break;
+    }
+  }, [streaks, dayKey, child.id, activities]);
 
   function toggleSimFriday(v: boolean) {
     localStorage.setItem(SIM_FRIDAY_KEY, v ? "1" : "0");
@@ -53,10 +77,11 @@ export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () =
   const daily = mine.filter((a) => a.category !== "jummah");
   const jummah = mine.filter((a) => a.category === "jummah");
   const doneCount = daily.filter((a) => completions[a.id]?.status === "done").length;
+  const featured = featuredForDay(daily, dayKey);
 
   let body;
   if (sub === "jummah") {
-    body = <JummahScreen items={jummah} completions={completions} onOpen={setOpen} onBack={() => setSub(null)} />;
+    body = <JummahScreen items={jummah} completions={completions} streaks={streaks} today={dayKey} onOpen={setOpen} onBack={() => setSub(null)} />;
   } else if (sub === "duas") {
     body = <DuaCorner child={child} onBack={() => setSub(null)} />;
   } else if (tab === "home") {
@@ -64,17 +89,15 @@ export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () =
       <HomeTab
         child={child}
         hour={now.getHours()}
-        starsToday={stars.today}
+        starsWeek={stars.week}
         doneCount={doneCount}
         total={daily.length}
         friday={friday}
         jummahDone={jummah.filter((a) => completions[a.id]?.status === "done").length}
         jummahTotal={jummah.length}
-        goodDeed={pickGoodDeed(daily, dayKey)}
-        goodDeedDone={(() => {
-          const g = pickGoodDeed(daily, dayKey);
-          return g ? completions[g.id]?.status : undefined;
-        })()}
+        featured={featured}
+        featuredCompletion={featured ? completions[featured.id] : undefined}
+        featuredStreak={featured && isStreakActive(streaks[featured.id], dayKey) ? streaks[featured.id] : undefined}
         onOpen={setOpen}
         onTab={setTab}
         onSub={setSub}
@@ -82,14 +105,33 @@ export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () =
     );
   } else if (tab === "checklist") {
     body = (
-      <ChecklistTab items={daily} completions={completions} onOpen={setOpen} friday={friday} onJummah={() => setSub("jummah")} loadError={error} loading={!activities} />
+      <ChecklistTab
+        items={daily}
+        completions={completions}
+        streaks={streaks}
+        today={dayKey}
+        onOpen={setOpen}
+        friday={friday}
+        onJummah={() => setSub("jummah")}
+        loadError={error}
+        loading={!activities}
+      />
     );
   } else if (tab === "play") {
     body = <PlayTab child={child} onCelebrate={(text) => setCelebrate({ text })} />;
   } else if (tab === "stars") {
-    body = <StarsTab stars={stars} />;
+    body = <StarsTab stars={stars} streaks={streaks} activities={activities ?? []} today={dayKey} />;
   } else {
-    body = <MeTab child={child} onGrownUps={onGrownUps} onDuas={() => setSub("duas")} simFriday={simFriday} onSimFriday={toggleSimFriday} />;
+    body = (
+      <MeTab
+        child={child}
+        onGrownUps={onGrownUps}
+        pendingCount={pendingCount}
+        onDuas={() => setSub("duas")}
+        simFriday={simFriday}
+        onSimFriday={toggleSimFriday}
+      />
+    );
   }
 
   return (
@@ -107,6 +149,7 @@ export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () =
           activity={open}
           child={child}
           completion={completions[open.id]}
+          streak={isStreakActive(streaks[open.id], dayKey) ? streaks[open.id] : undefined}
           onClose={() => setOpen(null)}
           onResult={(c) => {
             setOpen(null);
@@ -117,13 +160,6 @@ export function ChildApp({ child, onGrownUps }: { child: Child; onGrownUps: () =
       {celebrate && <Celebration text={celebrate.text} stars={celebrate.stars} onDone={endCelebration} />}
     </>
   );
-}
-
-function pickGoodDeed(items: Activity[], dayKey: string): Activity | undefined {
-  const deeds = items.filter((a) => a.category === "goodDeed");
-  if (deeds.length === 0) return undefined;
-  const n = dayKey.split("-").reduce((s, p) => s + Number(p), 0);
-  return deeds[n % deeds.length];
 }
 
 function TabBar({ tab, onTab }: { tab: Tab | null; onTab: (t: Tab) => void }) {
@@ -146,22 +182,43 @@ function TabBar({ tab, onTab }: { tab: Tab | null; onTab: (t: Tab) => void }) {
   );
 }
 
+function StreakChip({ s }: { s: Streak }) {
+  return (
+    <span className="status streak">
+      <CalendarCheck size={14} aria-hidden="true" />
+      {s.current} days
+    </span>
+  );
+}
+
+function TogetherTag() {
+  return (
+    <span className="status together">
+      <Users size={13} aria-hidden="true" />
+      Together
+    </span>
+  );
+}
+
 function HomeTab(props: {
   child: Child;
   hour: number;
-  starsToday: number;
+  starsWeek: number;
   doneCount: number;
   total: number;
   friday: boolean;
   jummahDone: number;
   jummahTotal: number;
-  goodDeed?: Activity;
-  goodDeedDone?: string;
+  featured?: Activity;
+  featuredCompletion?: Completion;
+  featuredStreak?: Streak;
   onOpen: (a: Activity) => void;
   onTab: (t: Tab) => void;
   onSub: (s: Sub) => void;
 }) {
   const greeting = `Assalamu Alaikum, ${props.child.nickname}`;
+  const f = props.featured;
+  const fStatus = props.featuredCompletion?.status;
   return (
     <div className="screen">
       <div className="row between">
@@ -177,22 +234,52 @@ function HomeTab(props: {
         </button>
       </div>
 
-      <div className="hero stack" style={{ gap: 14 }}>
-        <div className="row between">
-          <div className="stack" style={{ gap: 6 }}>
-            <span className="faint small strong">Stars today</span>
-            <span className="metric row" style={{ gap: 8 }}>
-              <Star size={30} fill="#f2c14e" color="#f2c14e" aria-hidden="true" />
-              {props.starsToday}
+      {f ? (
+        <div className="hero stack" style={{ gap: 16 }}>
+          <div className="row between" style={{ alignItems: "flex-start" }}>
+            <div className="stack" style={{ gap: 6 }}>
+              <span className="faint small strong">Today's deed</span>
+              <h1 style={{ color: "#fff", fontSize: 26 }}>{displayTitle(f.title.en)}</h1>
+              {f.together && (
+                <span className="row small" style={{ gap: 6, color: "rgba(255,255,255,0.85)" }}>
+                  <Users size={16} aria-hidden="true" /> Do it together with a grown-up
+                </span>
+              )}
+            </div>
+            <span className="icon-chip lg" style={{ background: "rgba(255,255,255,0.14)", color: "#fff" }} aria-hidden="true">
+              {(() => {
+                const I = CATEGORY_STYLE[f.category].Icon;
+                return <I size={28} />;
+              })()}
             </span>
           </div>
-          <div className="stack" style={{ gap: 2, alignItems: "flex-end" }}>
-            <span className="metric-sm">{props.doneCount}/{props.total}</span>
-            <span className="faint small">done today</span>
-          </div>
+          {fStatus === "done" ? (
+            <div className="row" style={{ gap: 8, fontWeight: 700 }}>
+              <span className="check-circle done" style={{ borderColor: "#fff", background: "#fff", color: "var(--primary)" }} aria-hidden="true">
+                <Check size={16} strokeWidth={3} />
+              </span>
+              Done today. Well done!
+            </div>
+          ) : fStatus === "pending" ? (
+            <div className="row" style={{ gap: 8, fontWeight: 700 }}>
+              <Star size={20} color="#f2c14e" aria-hidden="true" /> Waiting for a grown-up
+            </div>
+          ) : (
+            <button className="btn btn-child" style={{ background: "#fff", color: "var(--primary-strong)" }} onClick={() => props.onOpen(f)}>
+              Let's do it
+            </button>
+          )}
+          {props.featuredStreak && (
+            <span className="small" style={{ color: "rgba(255,255,255,0.85)" }}>
+              {props.featuredStreak.current} days in a row. Keep going!
+            </span>
+          )}
         </div>
-        <ProgressBar value={props.total ? props.doneCount / props.total : 0} label="Today's checklist progress" />
-      </div>
+      ) : (
+        <div className="hero">
+          <h2 style={{ color: "#fff" }}>New activities are coming soon</h2>
+        </div>
+      )}
 
       {props.friday && (
         <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "var(--c-jummah-bg)", borderColor: "#d3d9ea" }} onClick={() => props.onSub("jummah")}>
@@ -207,29 +294,24 @@ function HomeTab(props: {
         </button>
       )}
 
-      {props.goodDeed && (
-        <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center" }} onClick={() => props.onOpen(props.goodDeed!)}>
-          <CategoryChip category="goodDeed" />
-          <span className="stack" style={{ gap: 2, flex: 1 }}>
-            <span className="eyebrow">Good deed of the day</span>
-            <span>{displayTitle(props.goodDeed.title.en)}</span>
-          </span>
-          {props.goodDeedDone === "done" ? (
-            <span className="status done"><Check size={14} aria-hidden="true" />Done</span>
-          ) : (
-            <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
-          )}
-        </button>
-      )}
-
       <div className="grid2">
         <button className="tile" onClick={() => props.onTab("checklist")}>
           <span className="icon-chip" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
             <ListChecks size={22} />
           </span>
-          <span className="stack" style={{ gap: 2 }}>
+          <span className="stack" style={{ gap: 6, width: "100%" }}>
             Today's checklist
-            <span className="sub">{props.total - props.doneCount} left</span>
+            <ProgressBar value={props.total ? props.doneCount / props.total : 0} label="Today's checklist progress" />
+            <span className="sub">{props.doneCount} of {props.total} done</span>
+          </span>
+        </button>
+        <button className="tile" onClick={() => props.onTab("stars")}>
+          <span className="icon-chip" style={{ background: "var(--accent-soft)", color: "var(--accent)" }} aria-hidden="true">
+            <Trophy size={22} />
+          </span>
+          <span className="stack" style={{ gap: 2 }}>
+            This week
+            <span className="sub">{props.starsWeek} stars earned</span>
           </span>
         </button>
         <button className="tile" onClick={() => props.onSub("duas")}>
@@ -248,15 +330,6 @@ function HomeTab(props: {
             <span className="sub">Quiz and games</span>
           </span>
         </button>
-        <button className="tile" onClick={() => props.onTab("stars")}>
-          <span className="icon-chip" style={{ background: "var(--accent-soft)", color: "var(--accent)" }} aria-hidden="true">
-            <Trophy size={22} />
-          </span>
-          <span className="stack" style={{ gap: 2 }}>
-            My Stars
-            <span className="sub">See milestones</span>
-          </span>
-        </button>
       </div>
     </div>
   );
@@ -265,20 +338,29 @@ function HomeTab(props: {
 function StatusBadge({ c }: { c?: Completion }) {
   if (!c) return null;
   if (c.status === "done") return <span className="status done"><Check size={14} aria-hidden="true" />Done</span>;
-  if (c.status === "pending") return <span className="status pending"><Clock size={14} aria-hidden="true" />Waiting</span>;
-  return <span className="status declined">Try again</span>;
+  if (c.status === "pending") return <span className="status pending">Waiting for grown-up</span>;
+  if (c.status === "declined") return <span className="status declined">Try again</span>;
+  return null;
 }
 
-function TaskRow({ a, c, onOpen }: { a: Activity; c?: Completion; onOpen: (a: Activity) => void }) {
+function TaskRow({ a, c, streak, onOpen }: { a: Activity; c?: Completion; streak?: Streak; onOpen: (a: Activity) => void }) {
   const state = c?.status === "done" ? "done" : c?.status === "pending" ? "pending" : "";
   return (
     <button className="list-item" onClick={() => onOpen(a)}>
       <CategoryChip category={a.category} />
-      <span className="title">{displayTitle(a.title.en)}</span>
-      <StatusBadge c={c} />
+      <span className="stack" style={{ gap: 4, flex: 1 }}>
+        <span className="strong" style={{ fontWeight: 650 }}>{displayTitle(a.title.en)}</span>
+        {(a.together || streak || c) && (
+          <span className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+            <StatusBadge c={c} />
+            {streak && <StreakChip s={streak} />}
+            {a.together && <TogetherTag />}
+          </span>
+        )}
+      </span>
       <span className={`check-circle ${state}`} aria-hidden="true">
         {state === "done" && <Check size={16} strokeWidth={3} />}
-        {state === "pending" && <Clock size={15} strokeWidth={2.4} />}
+        {state === "pending" && <Star size={15} strokeWidth={2.2} />}
       </span>
     </button>
   );
@@ -287,6 +369,8 @@ function TaskRow({ a, c, onOpen }: { a: Activity; c?: Completion; onOpen: (a: Ac
 function ChecklistTab(props: {
   items: Activity[];
   completions: Record<string, Completion>;
+  streaks: Record<string, Streak>;
+  today: string;
   onOpen: (a: Activity) => void;
   friday: boolean;
   onJummah: () => void;
@@ -332,7 +416,13 @@ function ChecklistTab(props: {
       {shown.length > 0 && (
         <div className="list">
           {shown.map((a) => (
-            <TaskRow key={a.id} a={a} c={props.completions[a.id]} onOpen={props.onOpen} />
+            <TaskRow
+              key={a.id}
+              a={a}
+              c={props.completions[a.id]}
+              streak={isStreakActive(props.streaks[a.id], props.today) ? props.streaks[a.id] : undefined}
+              onOpen={props.onOpen}
+            />
           ))}
         </div>
       )}
@@ -343,6 +433,8 @@ function ChecklistTab(props: {
 function JummahScreen(props: {
   items: Activity[];
   completions: Record<string, Completion>;
+  streaks: Record<string, Streak>;
+  today: string;
   onOpen: (a: Activity) => void;
   onBack: () => void;
 }) {
@@ -350,6 +442,15 @@ function JummahScreen(props: {
   const selfItems = props.items.filter((a) => a.verification === "self");
   const family = props.items.filter((a) => a.verification === "parent");
   const allDone = props.items.length > 0 && done === props.items.length;
+  const row = (a: Activity) => (
+    <TaskRow
+      key={a.id}
+      a={a}
+      c={props.completions[a.id]}
+      streak={isStreakActive(props.streaks[a.id], props.today) ? props.streaks[a.id] : undefined}
+      onOpen={props.onOpen}
+    />
+  );
   return (
     <div className="screen">
       <BackLink onClick={props.onBack} />
@@ -380,18 +481,10 @@ function JummahScreen(props: {
         </div>
       )}
       <span className="section-title">I can do it</span>
-      <div className="list">
-        {selfItems.map((a) => (
-          <TaskRow key={a.id} a={a} c={props.completions[a.id]} onOpen={props.onOpen} />
-        ))}
-      </div>
+      <div className="list">{selfItems.map(row)}</div>
       <span className="section-title">With a grown-up</span>
       <p className="small muted" style={{ marginTop: -8 }}>Learning activities. Grown-ups decide these together with you.</p>
-      <div className="list">
-        {family.map((a) => (
-          <TaskRow key={a.id} a={a} c={props.completions[a.id]} onOpen={props.onOpen} />
-        ))}
-      </div>
+      <div className="list">{family.map(row)}</div>
     </div>
   );
 }
@@ -400,6 +493,7 @@ function TaskSheet(props: {
   activity: Activity;
   child: Child;
   completion?: Completion;
+  streak?: Streak;
   onClose: () => void;
   onResult: (c: { text: string; stars?: number }) => void;
 }) {
@@ -432,17 +526,29 @@ function TaskSheet(props: {
           <s.Icon size={64} strokeWidth={1.6} />
         </div>
         <div className="row between" style={{ alignItems: "flex-start" }}>
-          <div className="stack" style={{ gap: 4 }}>
+          <div className="stack" style={{ gap: 6 }}>
             <span className="eyebrow" style={{ color: s.fg }}>{s.label}{a.isPlaceholder ? " · sample" : ""}</span>
             <h2>{title}</h2>
+            {(a.together || props.streak) && (
+              <span className="row" style={{ gap: 6 }}>
+                {a.together && <TogetherTag />}
+                {props.streak && <StreakChip s={props.streak} />}
+              </span>
+            )}
           </div>
           <ListenButton text={title} compact />
         </div>
         <p className="muted">{a.description.en}</p>
         <div className="notice calm">{a.educationalExplanation.en}</div>
+        {props.streak && <Notice tone="calm">{props.streak.current} days in a row. Keep going!</Notice>}
         {problem && <Notice>Let's try again in a moment.</Notice>}
         {status === "done" && <Notice tone="calm">You already did this today. Great job!</Notice>}
-        {status === "pending" && <Notice tone="calm">Waiting for a grown-up to check.</Notice>}
+        {status === "pending" && (
+          <div className="notice calm" role="status">
+            <Star size={18} color="var(--accent)" aria-hidden="true" style={{ marginTop: 1 }} />
+            <span>Waiting for a grown-up. Your star is on its way.</span>
+          </div>
+        )}
         {canDo && (
           <button className="btn btn-primary btn-child" disabled={busy} onClick={complete}>
             {busy ? (
@@ -466,7 +572,16 @@ function TaskSheet(props: {
   );
 }
 
-function StarsTab({ stars }: { stars: { total: number; today: number; week: number; month: number } }) {
+function StarsTab(props: {
+  stars: { total: number; today: number; week: number; month: number };
+  streaks: Record<string, Streak>;
+  activities: Activity[];
+  today: string;
+}) {
+  const active = Object.values(props.streaks)
+    .filter((s) => isStreakActive(s, props.today))
+    .sort((a, b) => b.current - a.current);
+  const titleOf = (id: string) => displayTitle(props.activities.find((a) => a.id === id)?.title.en ?? "Activity");
   const milestones = [
     { title: "First 10 stars", need: 10 },
     { title: "First 50 stars", need: 50 },
@@ -475,32 +590,40 @@ function StarsTab({ stars }: { stars: { total: number; today: number; week: numb
   return (
     <div className="screen">
       <h1>My Stars</h1>
-      <div className="hero row between">
-        <div className="stack" style={{ gap: 6 }}>
-          <span className="faint small strong">All time</span>
-          <span className="metric row" style={{ gap: 8 }}>
-            <Star size={30} fill="#f2c14e" color="#f2c14e" aria-hidden="true" />
-            {stars.total}
-          </span>
-        </div>
-        <Trophy size={44} color="rgba(255,255,255,0.85)" aria-hidden="true" />
+      <div className="hero stack" style={{ gap: 8 }}>
+        <span className="faint small strong">This week</span>
+        <h1 style={{ color: "#fff", fontSize: 26 }}>
+          {props.stars.week > 0 ? `You earned ${props.stars.week} stars this week!` : "Your stars for this week will show here"}
+        </h1>
+        <span className="row small" style={{ gap: 6, color: "rgba(255,255,255,0.85)" }}>
+          <Star size={16} fill="#f2c14e" color="#f2c14e" aria-hidden="true" /> Every little step counts
+        </span>
       </div>
-      <div className="grid3">
-        {[
-          ["Today", stars.today],
-          ["This week", stars.week],
-          ["This month", stars.month],
-        ].map(([label, n]) => (
-          <div className="card stack" key={label as string} style={{ gap: 4, padding: 14 }}>
-            <span className="faint tiny strong">{label}</span>
-            <span className="metric-sm">{n}</span>
+
+      {active.length > 0 && (
+        <>
+          <span className="section-title">Days in a row</span>
+          <div className="list">
+            {active.map((s) => (
+              <div key={s.activityId} className="list-item" style={{ cursor: "default" }}>
+                <span className="icon-chip" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
+                  <CalendarCheck size={22} />
+                </span>
+                <span className="stack" style={{ gap: 2, flex: 1 }}>
+                  <span className="strong">{titleOf(s.activityId)}</span>
+                  <span className="small faint">{s.current} days in a row. Well done!</span>
+                </span>
+                <span className="metric-sm" style={{ fontSize: 22 }}>{s.current}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
+
       <span className="section-title">Milestones</span>
       <div className="list">
         {milestones.map((m) => {
-          const got = stars.total >= m.need;
+          const got = props.stars.total >= m.need;
           return (
             <div key={m.title} className="list-item" style={{ cursor: "default" }}>
               <span
@@ -514,13 +637,13 @@ function StarsTab({ stars }: { stars: { total: number; today: number; week: numb
               {got ? (
                 <span className="status done"><Check size={14} aria-hidden="true" />Earned</span>
               ) : (
-                <span className="faint small">{Math.max(0, m.need - stars.total)} to go</span>
+                <span className="faint small">{Math.max(0, m.need - props.stars.total)} to go</span>
               )}
             </div>
           );
         })}
       </div>
-      <p className="tiny faint">Sample milestones. The real list will come from the server.</p>
+      <p className="tiny faint">All time: {props.stars.total} stars. Sample milestones; the real list will come from the server.</p>
     </div>
   );
 }
@@ -528,6 +651,7 @@ function StarsTab({ stars }: { stars: { total: number; today: number; week: numb
 function MeTab(props: {
   child: Child;
   onGrownUps: () => void;
+  pendingCount: number;
   onDuas: () => void;
   simFriday: boolean;
   onSimFriday: (v: boolean) => void;
@@ -555,8 +679,11 @@ function MeTab(props: {
           </label>
         </div>
       )}
-      <button className="btn btn-secondary btn-block" style={{ marginTop: "auto" }} onClick={props.onGrownUps}>
-        <User size={18} aria-hidden="true" /> Parent area
+      <button className="btn btn-secondary btn-block" style={{ marginTop: "auto", position: "relative" }} onClick={props.onGrownUps}>
+        <Lock size={18} aria-hidden="true" /> Parent area
+        {props.pendingCount > 0 && (
+          <span className="count-badge" aria-label={`${props.pendingCount} waiting for approval`}>{props.pendingCount}</span>
+        )}
       </button>
     </div>
   );

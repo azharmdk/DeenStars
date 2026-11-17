@@ -38,19 +38,28 @@ try {
   }));
   console.log("child created");
 
+  const { sessionId } = await call("startParentSession", { pin: "4826" });
+  const madeUp = await call("makeUpActivity", { childId, activityId: "act_habit_salam", parentSessionId: sessionId, clientRequestId: crypto.randomUUID() });
+  console.log("make-up yesterday:", madeUp.status, madeUp.starsAwarded, madeUp.dayKey);
+
   const self = await call("completeActivity", { childId, activityId: "act_habit_salam", clientRequestId: crypto.randomUUID() });
   const again = await call("completeActivity", { childId, activityId: "act_habit_salam", clientRequestId: crypto.randomUUID() });
   console.log("self-report:", self.status, self.starsAwarded, "| repeat duplicate:", again.duplicate);
 
-  const pending = await call("completeActivity", { childId, activityId: "act_deed_help_parents", clientRequestId: crypto.randomUUID() });
-  const { sessionId } = await call("startParentSession", { pin: "4826" });
-  const decided = await call("decideApproval", {
-    childId,
-    approvalId: `act_deed_help_parents_${pending.dayKey}`,
-    decision: "approve",
-    parentSessionId: sessionId,
-  });
-  console.log("approval:", pending.status, "->", decided.status, decided.starsAwarded);
+  let streak;
+  for (let i = 0; i < 40 && !(streak?.current >= 2); i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    streak = (await getDoc(doc(db, "children", childId, "streaks", "act_habit_salam"))).data();
+  }
+  console.log("streak after yesterday + today:", streak?.current, "active through", streak?.activeThroughDayKey);
+
+  const pending = await call("completeActivity", { childId, activityId: "act_deed_set_table", clientRequestId: crypto.randomUUID() });
+  const approvalId = `act_deed_set_table_${pending.dayKey}`;
+  const approval = (await getDoc(doc(db, "children", childId, "parentApprovals", approvalId))).data();
+  console.log("pending expires at:", approval.expiresAt.toDate().toISOString());
+  const decided = await call("decideApproval", { childId, approvalId, decision: "approve", parentSessionId: sessionId });
+  await call("recordTogether", { childId, approvalId, together: true, parentSessionId: sessionId });
+  console.log("approval:", pending.status, "->", decided.status, decided.starsAwarded, "| together answer stored");
 
   const jummah = await call("completeActivity", { childId, activityId: "act_jummah_ready", clientRequestId: crypto.randomUUID() });
   console.log("jummah (dev override):", jummah.status);

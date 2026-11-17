@@ -10,6 +10,26 @@ export function dayKeyFor(date: Date, timeZone: string): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
+export function addDays(dayKey: string, n: number): string {
+  const d = new Date(`${dayKey}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Monday to Sunday day keys of the ISO week containing dayKey. */
+export function daysOfWeek(dayKey: string): string[] {
+  const d = new Date(`${dayKey}T00:00:00Z`);
+  const offset = (d.getUTCDay() || 7) - 1;
+  const monday = addDays(dayKey, -offset);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
+export function relativeDayLabel(dayKey: string, today: string): string {
+  if (dayKey === today) return "Today";
+  if (dayKey === addDays(today, -1)) return "Yesterday";
+  return new Date(`${dayKey}T00:00:00Z`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" });
+}
+
 export function weekKeyFromDayKey(dayKey: string): string {
   const d = new Date(`${dayKey}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));

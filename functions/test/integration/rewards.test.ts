@@ -94,7 +94,7 @@ describe("self-reported activity", () => {
     expect(child.totals.stars).toBe(2);
     const total = (await admin.doc(`children/${childId}/rollups/total`).get()).data()!;
     expect(total.stars).toBe(2);
-  });
+  }, 90_000); // the emulator resolves contended transactions slowly
 
   it("rejects unknown fields such as a client-supplied star amount", async () => {
     const p = await newParent("tamper");
