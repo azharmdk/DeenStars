@@ -13,3 +13,6 @@ ui-debug.log
 database-debug.log
 pglite-debug.log
 
+qa/node_modules/
+qa/shots/
+

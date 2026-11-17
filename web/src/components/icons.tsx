@@ -82,13 +82,14 @@ export function Avatar({ id, size = 48 }: { id: string; size?: number }) {
   );
 }
 
-export const DUA_ICONS: Record<string, LucideIcon> = {
-  eat_before: Utensils,
-  eat_after: Smile,
+export const DUA_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  eating: Utensils,
   sleep: Bed,
   wake: Sunrise,
   bathroom: ShowerHead,
   home: DoorOpen,
+  rabbana: HandHeart,
+  smile: Smile,
 };
 
 /** Brand mark: crescent and star. Replaces the cartoon mascot until a commissioned mascot exists (D-4). */

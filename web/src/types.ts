@@ -23,8 +23,9 @@ export interface Activity {
   ageEligibility: { ageGroups: AgeGroup[] };
   starRuleKey: string;
   verification: "self" | "parent";
-  frequency: "daily" | "jummahOnly" | "weekly" | "once";
+  frequency: "daily" | "jummahOnly" | "ramadanOnly" | "eidOnly" | "weekly" | "once";
   together?: boolean;
+  themeId?: string | null;
   isPlaceholder?: boolean;
   sortOrder: number;
 }
@@ -63,6 +64,96 @@ export function isStreakActive(s: Streak | undefined, today: string): s is Strea
 }
 
 export const STREAK_CELEBRATIONS = [3, 5, 7, 10, 14, 21, 30, 40, 50, 75, 100];
+
+export interface AudioRef {
+  path: string;
+  reciter: string;
+}
+
+export interface Dua {
+  id: string;
+  category: "sleep" | "wake" | "eating" | "bathroom" | "home" | "rabbana";
+  title: string;
+  arabic: string;
+  translation: string;
+  transliteration?: string | null;
+  whenToRecite: string;
+  repeat: number;
+  audio?: AudioRef | null;
+  quranRef?: string | null;
+  highlightFromWord?: number | null;
+  source: { type: string; work?: string; itemId?: number; surahName?: string; surahNumber?: number; ayahStart?: number; translationSource?: string; hadithReferenceStatus?: string };
+  reviewStatus: string;
+  sortOrder: number;
+}
+
+export interface SurahAyah {
+  ref: string;
+  ayahNumber: number;
+  arabic: string;
+  translation: string;
+  transliteration: string;
+  audio?: AudioRef | null;
+}
+
+export interface Surah {
+  id: string;
+  surahNumber: number;
+  nameArabic: string;
+  nameTransliterated: string;
+  meaning: string;
+  ayahs: SurahAyah[];
+  childrenRecitation?: AudioRef | null;
+  reviewStatus: string;
+  sortOrder: number;
+}
+
+export type AgeBand = "little" | "young";
+export const AGE_BAND_LABEL: Record<AgeBand, string> = { little: "Little Learners (3-5)", young: "Young Explorers (6-8)" };
+export function ageBandFor(child: { ageGroup: AgeGroup }): AgeBand {
+  return child.ageGroup === "6" ? "young" : "little";
+}
+
+export interface Story {
+  id: string;
+  title: string;
+  prophet: string;
+  ageBand: AgeBand;
+  coverScene: string;
+  scenes: { scene: string; refs: string[]; text: string }[];
+  lesson: string;
+  verse: {
+    ref: string;
+    intro: string;
+    highlightFromWord?: number;
+    surahName: string;
+    ayahNumber: number;
+    arabic: string;
+    translation: string;
+    transliteration: string;
+    audio?: AudioRef | null;
+  };
+  refVerses: Record<string, { surahName: string; ayahNumber: number; arabic: string; translation: string }>;
+  sources: string[];
+  reviewStatus: string;
+  sortOrder: number;
+}
+
+export type LearnState = "notStarted" | "learning" | "practising" | "learned";
+export const LEARN_LABEL: Record<LearnState, string> = {
+  notStarted: "Not started",
+  learning: "Learning",
+  practising: "Practising",
+  learned: "Learned",
+};
+
+export interface Theme {
+  themeId: string;
+  title: string;
+  description: string;
+  icon: string;
+  activityIds: string[];
+}
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   gentle: "Gentle",

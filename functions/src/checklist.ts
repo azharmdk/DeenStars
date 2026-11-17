@@ -3,7 +3,9 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { DocumentData, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
-import { callableOptions, db, DEV_ALLOW_JUMMAH_ANY_DAY, REGION } from "./lib/env";
+import { callableOptions, db, DEV_ALLOW_JUMMAH_ANY_DAY, DEV_ALLOW_SEASONAL_ANY_DAY, REGION } from "./lib/env";
+import { hijriForDayKey, seasonFor, totalAdjust } from "./lib/hijri";
+import { hijriSettingsForChild } from "./learning";
 import { ChildDoc, loadOwnedChild, parseInput, requireAuth, requireParentSession } from "./lib/guards";
 import { applyStarAward, loadRewardsConfig, RewardRule } from "./lib/rewards";
 import { recomputeStreak } from "./lib/streaks";
@@ -25,6 +27,12 @@ async function loadEligibleActivity(child: ChildDoc, activityId: string, dayKey:
   }
   if (activity.frequency === "jummahOnly" && !isFridayDayKey(dayKey) && !DEV_ALLOW_JUMMAH_ANY_DAY) {
     throw new HttpsError("failed-precondition", "This activity is available on Fridays.");
+  }
+  if ((activity.frequency === "ramadanOnly" || activity.frequency === "eidOnly") && !DEV_ALLOW_SEASONAL_ANY_DAY) {
+    const { country, parentAdjust, config } = await hijriSettingsForChild(child.ownerUid, child.timeZone);
+    const season = seasonFor(hijriForDayKey(dayKey, totalAdjust(config, country, parentAdjust)));
+    const ok = activity.frequency === "ramadanOnly" ? season.kind === "ramadan" : season.kind === "eidFitr" || season.kind === "eidAdha";
+    if (!ok) throw new HttpsError("failed-precondition", "This activity is for a special time of year.");
   }
   const rewards = await loadRewardsConfig();
   const ruleKey: string = activity.starRuleKey;

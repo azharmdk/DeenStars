@@ -17,11 +17,10 @@ import {
   ToyBrick,
   TreePalm,
   Users,
-  Volume2,
   X,
 } from "lucide-react";
 import { Child } from "../types";
-import { BackLink, speak } from "../components/common";
+import { BackLink } from "../components/common";
 
 /**
  * Play & Learn UI prototype. Quiz questions are SAMPLE manners scenarios, not reviewed content,
@@ -176,7 +175,7 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
         <div className="dots" aria-label={`Question ${i + 1} of ${questions.length}`}>
           {questions.map((_, k) => <span key={k} className={k <= i ? "on" : ""} />)}
         </div>
-        <button className="icon-btn" onClick={() => speak(q.prompt)} aria-label="Read the question"><Volume2 size={20} aria-hidden="true" /></button>
+        <span style={{ width: 44 }} aria-hidden="true" />
       </div>
       <div className="feature-panel" style={{ backgroundColor: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
         <q.Icon size={60} strokeWidth={1.6} />
@@ -195,7 +194,6 @@ function Quiz({ child, onExit, onCelebrate }: { child: Child; onExit: () => void
               disabled={answered}
               onClick={() => {
                 setPicked(k);
-                speak(q.options[k].correct ? "Yes! Well done!" : "Good try! Let's learn together.");
               }}
             >
               <span className="letter" aria-hidden="true">{letters[k]}</span>
@@ -251,7 +249,6 @@ function MatchGame({ child, onExit, onCelebrate }: { child: Child; onExit: () =>
     if (next.length === 2) {
       const [a, b] = next.map((k) => cards.find((c) => c.key === k)!);
       if (a.id === b.id) {
-        speak(a.label);
         setTimeout(() => {
           const m = [...matched, a.id];
           setMatched(m);

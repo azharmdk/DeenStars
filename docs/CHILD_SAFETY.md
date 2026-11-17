@@ -26,6 +26,8 @@ Status: DRAFT for approval. Version 0.1. This document is an engineering plan, n
 
 Not collected: real names of children, photos, voice recordings, location, contacts, advertising ID, device fingerprinting, free-text from children, any user-generated content from children.
 
+Region for Hijri dates (Ramadan, Eid) is derived from the child's stored time zone, never from GPS or IP location. A parent can override the region or shift the date by one day. All audio is served from DeenStars hosting, so the app contacts no third-party hosts at runtime.
+
 ## 3. Hard rules
 
 1. Parent owns and manages every child profile.

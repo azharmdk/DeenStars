@@ -8,4 +8,5 @@ export {
   onCompletionWritten,
   expireApprovals,
 } from "./checklist";
+export { updateLearningProgress, updateParentSettings } from "./learning";
 export { devSeedContent } from "./devSeed";

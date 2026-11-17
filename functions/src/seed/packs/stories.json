@@ -1,0 +1,104 @@
+[
+  {
+    "storyId": "story_nuh_ship",
+    "title": "Prophet Nuh and the Big Ship",
+    "prophet": "Prophet Nuh (Noah), peace be upon him",
+    "ageBand": "little",
+    "coverScene": "nuh-waves",
+    "scenes": [
+      { "scene": "nuh-village", "refs": ["71:1"], "text": "Long ago, Allah sent Prophet Nuh, peace be upon him, to his people. He asked them to worship Allah alone and to stop doing wrong." },
+      { "scene": "nuh-building", "refs": ["11:37"], "text": "Allah told Prophet Nuh to build a big ship. Allah was watching over him and showing him what to do." },
+      { "scene": "nuh-animals", "refs": ["11:40"], "text": "When the time came, Prophet Nuh brought onto the ship two of every kind of animal, a pair of each, together with the people who believed." },
+      { "scene": "nuh-waves", "refs": ["11:41", "11:42"], "text": "Prophet Nuh began the journey with the name of Allah. The ship sailed on huge waves, as tall as mountains." },
+      { "scene": "nuh-mountain", "refs": ["11:44"], "text": "Then Allah told the earth to swallow its water and the sky to stop the rain. The water went down, and the ship came to rest on Mount Judi." }
+    ],
+    "lesson": "Allah takes care of those who believe in Him and do what He asks.",
+    "verse": { "ref": "11:41", "highlightFromWord": 3, "intro": "Prophet Nuh started the journey in the name of Allah." },
+    "sources": ["Quran 71:1, 11:37, 11:40-44", "Tafsir Ibn Kathir (context)"]
+  },
+  {
+    "storyId": "story_sulaiman_ant",
+    "title": "Prophet Sulaiman and the Little Ant",
+    "prophet": "Prophet Sulaiman (Solomon), peace be upon him",
+    "ageBand": "little",
+    "coverScene": "sulaiman-ant",
+    "scenes": [
+      { "scene": "sulaiman-birds", "refs": ["27:16"], "text": "Allah gave Prophet Sulaiman, peace be upon him, many gifts. He was even taught to understand the language of the birds." },
+      { "scene": "sulaiman-march", "refs": ["27:17"], "text": "One day, Prophet Sulaiman's great army set off in neat rows, with birds flying along too." },
+      { "scene": "sulaiman-ant", "refs": ["27:18"], "text": "When they reached the Valley of the Ants, a little ant called out: \"O ants, go into your homes, so that Sulaiman and his army do not step on you without knowing!\"" },
+      { "scene": "sulaiman-valley", "refs": ["27:19"], "text": "Prophet Sulaiman heard the little ant and smiled. He thanked Allah for His gifts and asked Allah to help him do good." }
+    ],
+    "lesson": "Even a tiny ant cares for others. Prophet Sulaiman listened kindly and thanked Allah.",
+    "verse": { "ref": "27:19", "highlightFromWord": 5, "intro": "Prophet Sulaiman thanked Allah with this dua." },
+    "sources": ["Quran 27:16-19", "Tafsir Ibn Kathir (context)"]
+  },
+  {
+    "storyId": "story_yunus_fish",
+    "title": "Prophet Yunus and the Big Fish",
+    "prophet": "Prophet Yunus (Jonah), peace be upon him",
+    "ageBand": "little",
+    "coverScene": "yunus-fish",
+    "scenes": [
+      { "scene": "yunus-town", "refs": ["37:139"], "text": "Allah sent Prophet Yunus, peace be upon him, to teach his people." },
+      { "scene": "yunus-ship", "refs": ["37:140"], "text": "One day, Prophet Yunus left his town and got onto a ship full of people and things." },
+      { "scene": "yunus-fish", "refs": ["37:142"], "text": "Then a huge fish swallowed him!" },
+      { "scene": "yunus-dark", "refs": ["21:87"], "text": "In the darkness, Prophet Yunus called out to Allah: \"There is no god but You. Glory be to You. I have done wrong.\"" },
+      { "scene": "yunus-shore", "refs": ["37:145", "37:146"], "text": "Allah heard his dua. Prophet Yunus was placed on an open shore, tired and weak, and Allah made a gourd plant grow over him." },
+      { "scene": "yunus-return", "refs": ["37:147", "37:148"], "text": "Then Allah sent Prophet Yunus to a hundred thousand people or more, and they believed." }
+    ],
+    "lesson": "We can always call on Allah, even when things are hard. Allah hears us.",
+    "verse": { "ref": "21:87", "highlightFromWord": 14, "intro": "This is the dua Prophet Yunus made in the darkness." },
+    "sources": ["Quran 37:139-148, 21:87", "Tafsir Ibn Kathir (context)"]
+  },
+  {
+    "storyId": "story_musa_river",
+    "title": "Baby Musa and the River",
+    "prophet": "Prophet Musa (Moses), peace be upon him",
+    "ageBand": "young",
+    "coverScene": "musa-chest",
+    "scenes": [
+      { "scene": "musa-home-night", "refs": ["28:7"], "text": "Allah inspired the mother of baby Musa, peace be upon him: when she was afraid for him, she should place him in the river and not be afraid or sad. Allah promised to bring him back to her." },
+      { "scene": "musa-chest", "refs": ["20:39"], "text": "So she put baby Musa in a wooden chest and placed it in the river. The river carried the chest to the bank." },
+      { "scene": "musa-palace", "refs": ["28:8", "28:9"], "text": "The family of Pharaoh picked him up. Pharaoh's wife said: \"He will be a joy for me and for you. Do not kill him. Maybe he will be useful to us, or we may take him as a son.\"" },
+      { "scene": "musa-sister", "refs": ["28:11", "28:12"], "text": "Musa's sister followed him from far away. Baby Musa would not feed from any nurse, so his sister said: \"Shall I show you a family who will look after him for you?\"" },
+      { "scene": "musa-reunited", "refs": ["28:13"], "text": "So Allah brought Musa back to his mother, so that she would be happy and not sad, and would know that Allah's promise is true." }
+    ],
+    "lesson": "Allah always keeps His promise. We can trust Allah when we are worried.",
+    "verse": { "ref": "28:13", "intro": "Allah tells us how He brought Musa back to his mother." },
+    "sources": ["Quran 28:7-13, 20:39", "Tafsir Ibn Kathir (context)"]
+  },
+  {
+    "storyId": "story_ibrahim_kaaba",
+    "title": "Building the Kaaba",
+    "prophet": "Prophet Ibrahim (Abraham) and Prophet Ismail (Ishmael), peace be upon them",
+    "ageBand": "young",
+    "coverScene": "ibrahim-building",
+    "scenes": [
+      { "scene": "ibrahim-valley", "refs": ["14:37"], "text": "Prophet Ibrahim, peace be upon him, settled some of his family in a valley in Makkah, where nothing could be farmed, near Allah's sacred House. He asked Allah to provide for them." },
+      { "scene": "ibrahim-building", "refs": ["2:127"], "text": "Later, Prophet Ibrahim and his son Prophet Ismail, peace be upon them, raised the foundations of the House, the Kaaba." },
+      { "scene": "ibrahim-dua", "refs": ["2:127", "2:128"], "text": "As they worked, they made dua: \"Our Lord, accept this from us. You are the All-Hearing, the All-Knowing.\"" },
+      { "scene": "ibrahim-house", "refs": ["2:125"], "text": "Allah made the House a place people return to and a place of safety. He asked Prophet Ibrahim and Prophet Ismail to keep it clean for those who come to pray." }
+    ],
+    "lesson": "When we do something good, we ask Allah to accept it from us.",
+    "verse": { "ref": "2:127", "highlightFromWord": 7, "intro": "This is the dua Prophet Ibrahim and Prophet Ismail made while building." },
+    "sources": ["Quran 14:37, 2:125-128", "Tafsir Ibn Kathir (context)"]
+  },
+  {
+    "storyId": "story_adam_first",
+    "title": "Prophet Adam, the First Person",
+    "prophet": "Prophet Adam, peace be upon him",
+    "ageBand": "young",
+    "coverScene": "adam-garden",
+    "scenes": [
+      { "scene": "adam-sky", "refs": ["2:30"], "text": "Allah told the angels that He would place a khalifah, someone to look after things, on the earth." },
+      { "scene": "adam-names", "refs": ["2:31"], "text": "Allah taught Prophet Adam, peace be upon him, the names of all things." },
+      { "scene": "adam-light", "refs": ["2:34"], "text": "Allah told the angels to bow down to Adam. They all did, except Iblis, who was too proud." },
+      { "scene": "adam-garden", "refs": ["2:35"], "text": "Prophet Adam and his wife lived in the Garden and could eat from it freely. But Allah told them not to go near one tree." },
+      { "scene": "adam-earth", "refs": ["2:36"], "text": "Shaytan tricked them into going near the tree. So they left the Garden and came to live on the earth." },
+      { "scene": "adam-sorry", "refs": ["7:23", "2:37"], "text": "Prophet Adam and his wife were sorry and asked Allah to forgive them. Allah accepted their repentance. He is the Accepter of repentance, the Most Merciful." }
+    ],
+    "lesson": "When we make a mistake, we say sorry to Allah. Allah forgives those who are truly sorry.",
+    "verse": { "ref": "7:23", "highlightFromWord": 1, "intro": "This is the dua Prophet Adam and his wife made." },
+    "sources": ["Quran 2:30-37, 7:23", "Tafsir Ibn Kathir (context)"]
+  }
+]

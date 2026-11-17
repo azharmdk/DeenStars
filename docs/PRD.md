@@ -141,3 +141,9 @@ See `OPEN_QUESTIONS_AND_RISKS.md` for the full list with recommendations. The de
 | 2026-11 | No public or global ranking of children. Replaces master spec §16 (anonymous weekly leaderboard). |
 | 2026-11 | On hold: family leaderboard, monthly awards and prizes. |
 | 2026-11 | Retention features added to scope by priority (`ROADMAP.md` Phases 1–6). Random and variable rewards are not adopted. |
+| 2026-11 | Free and open sources only for Quran, duas and audio, no permission requests for now (`ISLAMIC_CONTENT_POLICY.md` §11). |
+| 2026-11 | No synthetic or AI voices anywhere. Device text-to-speech removed. Stories are read by the parent; duas and verses play human qari recordings. |
+| 2026-11 | Stories are written by DeenStars from Quran references, with original images and no human or Prophet figures. |
+| 2026-11 | Story age bands: Little Learners (ages 3–5) and Young Explorers (ages 6–8). App profiles keep their age groups (3–4, 5, 6). |
+| 2026-11 | Ramadan, Eid and Hijri dates follow the family's region (derived from the child's time zone, no location collection), with a parent adjustment of one day either way. |
+| 2026-11 | Phases 2 and 3 are built together and handed to QEs after Phase 3. |

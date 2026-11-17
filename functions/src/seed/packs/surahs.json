@@ -1,0 +1,114 @@
+[
+ {
+  "surahId": "surah_1",
+  "surahNumber": 1,
+  "nameArabic": "سُورَةُ ٱلْفَاتِحَةِ",
+  "nameTransliterated": "Al-Faatiha",
+  "meaning": "The Opening",
+  "ayahRefs": [
+   "1:1",
+   "1:2",
+   "1:3",
+   "1:4",
+   "1:5",
+   "1:6",
+   "1:7"
+  ],
+  "childrenRecitation": {
+   "path": "/audio/quran/azazi-children/1.mp3",
+   "reciter": "Sheikh al-Husayni al-Azazi with children",
+   "origin": "https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/1.mp3"
+  }
+ },
+ {
+  "surahId": "surah_103",
+  "surahNumber": 103,
+  "nameArabic": "سُورَةُ العَصۡرِ",
+  "nameTransliterated": "Al-Asr",
+  "meaning": "The Declining Day, Epoch",
+  "ayahRefs": [
+   "103:1",
+   "103:2",
+   "103:3"
+  ],
+  "childrenRecitation": {
+   "path": "/audio/quran/azazi-children/103.mp3",
+   "reciter": "Sheikh al-Husayni al-Azazi with children",
+   "origin": "https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/103.mp3"
+  }
+ },
+ {
+  "surahId": "surah_108",
+  "surahNumber": 108,
+  "nameArabic": "سُورَةُ الكَوۡثَرِ",
+  "nameTransliterated": "Al-Kawthar",
+  "meaning": "Abundance",
+  "ayahRefs": [
+   "108:1",
+   "108:2",
+   "108:3"
+  ],
+  "childrenRecitation": {
+   "path": "/audio/quran/azazi-children/108.mp3",
+   "reciter": "Sheikh al-Husayni al-Azazi with children",
+   "origin": "https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/108.mp3"
+  }
+ },
+ {
+  "surahId": "surah_112",
+  "surahNumber": 112,
+  "nameArabic": "سُورَةُ الإِخۡلَاصِ",
+  "nameTransliterated": "Al-Ikhlaas",
+  "meaning": "Sincerity",
+  "ayahRefs": [
+   "112:1",
+   "112:2",
+   "112:3",
+   "112:4"
+  ],
+  "childrenRecitation": {
+   "path": "/audio/quran/azazi-children/112.mp3",
+   "reciter": "Sheikh al-Husayni al-Azazi with children",
+   "origin": "https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/112.mp3"
+  }
+ },
+ {
+  "surahId": "surah_113",
+  "surahNumber": 113,
+  "nameArabic": "سُورَةُ الفَلَقِ",
+  "nameTransliterated": "Al-Falaq",
+  "meaning": "The Dawn",
+  "ayahRefs": [
+   "113:1",
+   "113:2",
+   "113:3",
+   "113:4",
+   "113:5"
+  ],
+  "childrenRecitation": {
+   "path": "/audio/quran/azazi-children/113.mp3",
+   "reciter": "Sheikh al-Husayni al-Azazi with children",
+   "origin": "https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/113.mp3"
+  }
+ },
+ {
+  "surahId": "surah_114",
+  "surahNumber": 114,
+  "nameArabic": "سُورَةُ النَّاسِ",
+  "nameTransliterated": "An-Naas",
+  "meaning": "Mankind",
+  "ayahRefs": [
+   "114:1",
+   "114:2",
+   "114:3",
+   "114:4",
+   "114:5",
+   "114:6"
+  ],
+  "childrenRecitation": {
+   "path": "/audio/quran/azazi-children/114.mp3",
+   "reciter": "Sheikh al-Husayni al-Azazi with children",
+   "origin": "https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/114.mp3"
+  }
+ }
+]

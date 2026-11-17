@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from "react";
-import { AlertCircle, ChevronLeft, Info, Star, Volume2 } from "lucide-react";
+import { AlertCircle, ChevronLeft, Info, Star } from "lucide-react";
 
 export function PrototypeBanner() {
   return (
@@ -97,27 +97,3 @@ export function StarCount({ n, size = 18 }: { n: number; size?: number }) {
   );
 }
 
-/** Speaks text with the browser voice (UI prompts only, never Quran or duas). */
-export function speak(text: string) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.9;
-  u.pitch = 1.05;
-  window.speechSynthesis.speak(u);
-}
-
-export function ListenButton({ text, compact }: { text: string; compact?: boolean }) {
-  if (compact) {
-    return (
-      <button className="icon-btn" onClick={() => speak(text)} aria-label={`Listen: ${text}`}>
-        <Volume2 size={20} aria-hidden="true" />
-      </button>
-    );
-  }
-  return (
-    <button className="btn btn-secondary" onClick={() => speak(text)} aria-label={`Listen: ${text}`}>
-      <Volume2 size={18} aria-hidden="true" /> Listen
-    </button>
-  );
-}

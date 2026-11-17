@@ -61,6 +61,7 @@ service cloud.firestore {
     match /weeklyChallenges/{id}  { allow read: if signedIn(); allow write: if false; }
     match /badges/{id}            { allow read: if signedIn(); allow write: if false; }
     match /appConfiguration/{id}  { allow read: if signedIn(); allow write: if false; }
+    match /stories/{id}           { allow read: if signedIn(); allow write: if false; }
 
     // ---- Leaderboards: anonymous snapshot rows, read-only ----
     match /leaderboards/{boardId} {

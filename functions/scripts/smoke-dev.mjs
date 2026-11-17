@@ -64,6 +64,18 @@ try {
   const jummah = await call("completeActivity", { childId, activityId: "act_jummah_ready", clientRequestId: crypto.randomUUID() });
   console.log("jummah (dev override):", jummah.status);
 
+  const ramadan = await call("completeActivity", { childId, activityId: "act_ramadan_join_iftar", clientRequestId: crypto.randomUUID() });
+  console.log("ramadan deed (dev override):", ramadan.status);
+  await call("updateLearningProgress", { childId, kind: "dua", itemId: "dua_before_sleeping", state: "practising" });
+  const learned = await call("updateLearningProgress", { childId, kind: "surah", itemId: "surah_112", state: "learned", parentSessionId: sessionId });
+  console.log("surah confirmed by grown-up, stars:", learned.starsAwarded);
+  for (const col of ["stories", "duaLibrary", "surahLibrary"]) {
+    const { getDocs, collection } = await import("firebase/firestore");
+    console.log(`${col}:`, (await getDocs(collection(db, col))).size);
+  }
+  const audio = await fetch("https://deenstars-dev.web.app/audio/duas/hisn-105.mp3", { method: "HEAD" });
+  console.log("hosted audio:", audio.status, audio.headers.get("content-type"));
+
   const child = (await getDoc(doc(db, "children", childId))).data();
   console.log("total stars on child:", child.totals.stars);
 

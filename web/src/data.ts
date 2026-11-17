@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, doc, getDocs, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import type { Activity, Approval, Category, Child, Completion, Streak } from "./types";
+import type { Activity, Approval, Category, Child, Completion, LearnState, Streak } from "./types";
 import { dayKeyFor, daysOfWeek, weekKeyFromDayKey } from "./time";
+import { countryForTimeZone, daysUntilRamadan, hijriForDayKey, Season, seasonFor, totalAdjust } from "./hijri";
+import { testerToolsEnabled } from "./devFlags";
 
 export function useAuthUser(): { user: User | null; ready: boolean } {
   const [state, setState] = useState<{ user: User | null; ready: boolean }>({ user: null, ready: false });
@@ -186,11 +188,125 @@ export function usePendingApprovals(children: Child[]) {
   }, [byChild, now]);
 }
 
-/** Activities a child sees today: matching age group; Jummah items only on Friday (or simulated Friday). */
-export function activitiesForChild(all: Activity[], child: Child, friday: boolean): Activity[] {
-  return all.filter(
-    (a) => a.ageEligibility?.ageGroups?.includes(child.ageGroup) && (a.frequency !== "jummahOnly" || friday),
-  );
+/**
+ * Activities a child sees today: matching age group. Jummah items only on Friday, Ramadan items only
+ * in Ramadan, Eid items only at Eid (each can be simulated by tester tools).
+ */
+export function activitiesForChild(all: Activity[], child: Child, friday: boolean, season: Season = { kind: "none" }): Activity[] {
+  return all.filter((a) => {
+    if (!a.ageEligibility?.ageGroups?.includes(child.ageGroup)) return false;
+    if (a.frequency === "jummahOnly") return friday;
+    if (a.frequency === "ramadanOnly") return season.kind === "ramadan";
+    if (a.frequency === "eidOnly") return season.kind === "eidFitr" || season.kind === "eidAdha";
+    return true;
+  });
+}
+
+// ---------- Learning content and configuration ----------
+
+const docCache = new Map<string, unknown>();
+
+/** Reads an appConfiguration document once and caches it for the session. */
+export function useConfig<T>(id: string): T | null {
+  const [data, setData] = useState<T | null>((docCache.get(`cfg/${id}`) as T) ?? null);
+  useEffect(() => {
+    if (docCache.has(`cfg/${id}`)) return;
+    getDoc(doc(db, "appConfiguration", id))
+      .then((snap) => {
+        const v = (snap.data() as T) ?? null;
+        docCache.set(`cfg/${id}`, v);
+        setData(v);
+      })
+      .catch(() => setData(null));
+  }, [id]);
+  return data;
+}
+
+/** Reads a published content collection once (duaLibrary, surahLibrary, stories) sorted by sortOrder. */
+export function useLibrary<T extends { sortOrder: number }>(name: "duaLibrary" | "surahLibrary" | "stories") {
+  const [items, setItems] = useState<T[] | null>((docCache.get(`lib/${name}`) as T[]) ?? null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    if (docCache.has(`lib/${name}`)) return;
+    getDocs(collection(db, name))
+      .then((snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) }) as unknown as T).sort((a, b) => a.sortOrder - b.sortOrder);
+        docCache.set(`lib/${name}`, list);
+        setItems(list);
+      })
+      .catch(() => setError(true));
+  }, [name]);
+  return { items, error };
+}
+
+export function useLearningProgress(childId: string, kind: "dua" | "surah") {
+  const [map, setMap] = useState<Record<string, LearnState>>({});
+  useEffect(() => {
+    return onSnapshot(collection(db, "children", childId, kind === "dua" ? "duaProgress" : "surahProgress"), (snap) => {
+      const next: Record<string, LearnState> = {};
+      snap.docs.forEach((d) => (next[d.id] = (d.data().state as LearnState) ?? "notStarted"));
+      setMap(next);
+    });
+  }, [childId, kind]);
+  return map;
+}
+
+export interface LearnedItem {
+  itemId: string;
+  kind: "dua" | "surah";
+  learnedDayKey?: string;
+}
+
+export function useLearnedItems(childId: string) {
+  const [items, setItems] = useState<LearnedItem[]>([]);
+  useEffect(() => {
+    const unsubs = (["duaProgress", "surahProgress"] as const).map((col) =>
+      onSnapshot(query(collection(db, "children", childId, col), where("state", "==", "learned")), (snap) => {
+        const kind = col === "duaProgress" ? "dua" : "surah";
+        setItems((prev) => [
+          ...prev.filter((p) => p.kind !== kind),
+          ...snap.docs.map((d) => ({ itemId: d.id, kind, learnedDayKey: d.data().learnedDayKey as string | undefined }) as LearnedItem),
+        ]);
+      }),
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [childId]);
+  return items;
+}
+
+// ---------- Seasons (Ramadan, Eid) ----------
+
+export interface HijriSettings {
+  country?: string | null;
+  adjust?: number;
+}
+
+export function useParentHijriSettings(): HijriSettings {
+  const [s, setS] = useState<HijriSettings>({});
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    return onSnapshot(doc(db, "parents", uid), (snap) => setS((snap.data()?.settings?.hijri as HijriSettings) ?? {}));
+  }, []);
+  return s;
+}
+
+export const SIM_SEASON_KEY = "ds_sim_season";
+
+/** Season for a child today, from the region (time zone or parent override) and adjustments. */
+export function useSeason(child: Child, dayKey: string) {
+  const config = useConfig<{ defaultAdjust: number; adjustByCountry: Record<string, number> }>("hijri");
+  const settings = useParentHijriSettings();
+  const country = settings.country || countryForTimeZone(child.timeZone);
+  const adjust = totalAdjust(config, country, settings.adjust ?? 0);
+  const hijri = hijriForDayKey(dayKey, adjust);
+  let season = seasonFor(hijri);
+  const sim = testerToolsEnabled ? localStorage.getItem(SIM_SEASON_KEY) : null;
+  if (sim) {
+    const [kind, day] = sim.split(":");
+    if (kind === "ramadan" || kind === "eidFitr" || kind === "eidAdha") season = { kind, day: Number(day) || 1 } as Season;
+  }
+  return { season, hijri, country, adjust, daysToRamadan: season.kind === "ramadan" ? 0 : daysUntilRamadan(dayKey, adjust) };
 }
 
 /**

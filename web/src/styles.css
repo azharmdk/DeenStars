@@ -5,6 +5,7 @@
  * Keep token names in sync with the SwiftUI DSDesignSystem.
  */
 @import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource/amiri-quran/400.css";
 
 :root {
   --primary: #0e5c4f;
@@ -418,6 +419,57 @@ svg { flex-shrink: 0; }
 .memory-card.matched { background: var(--primary-soft); border-color: #bcd9cf; }
 
 .arabic { font-family: var(--font-arabic); }
+.arabic-text {
+  font-family: "Amiri Quran", var(--font-arabic); line-height: 2.1; margin: 0; text-align: center; color: var(--ink);
+  word-spacing: 2px;
+}
+.arabic-hl { background: var(--accent-soft); color: inherit; border-radius: 6px; padding: 0 2px; }
+.night .arabic-hl { background: rgba(242, 193, 78, 0.22); }
+
+/* Story reader */
+.story-panel { border-radius: 18px; overflow: hidden; box-shadow: var(--shadow-md); }
+.caption {
+  background: #fffdf6; border: 3px solid #22302e; border-radius: 16px; padding: 14px 16px;
+  font-size: 18px; line-height: 1.55; font-weight: 550; position: relative; margin-top: -26px; margin-left: 10px; margin-right: 10px;
+}
+.ref-chip {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--c-quran);
+  background: var(--c-quran-bg); border-radius: 999px; padding: 3px 9px; border: none; cursor: pointer;
+}
+.review-banner { background: var(--accent-soft); color: #6b4a07; font-size: 12.5px; font-weight: 650; border-radius: 10px; padding: 6px 10px; }
+.band-pill { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: var(--surface-2); color: var(--ink-2); }
+
+/* Bedtime (night) theme */
+.night {
+  --bg: #121a33; --surface: #1b2547; --surface-2: #243058; --border: #2e3b68;
+  --ink: #eef1fb; --ink-2: #b7c0dd; --ink-3: #8a94b8;
+  --primary: #f2c14e; --primary-strong: #f7d27a; --primary-soft: #2a3563;
+  background: var(--bg); color: var(--ink);
+}
+.night .card, .night .list { background: var(--surface); border-color: var(--border); }
+.btn-night { background: #2a3563; color: #f7d27a; border-color: #3a4780; }
+.night .back-link { color: #f7d27a; }
+
+/* Ramadan calendar */
+.ramadan-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.ramadan-day {
+  aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700;
+}
+.ramadan-day.done { background: var(--c-jummah); color: #f2c14e; border-color: var(--c-jummah); }
+.ramadan-day.today { outline: 3px solid var(--accent); }
+.ramadan-day.future { opacity: 0.55; }
+
+@media print {
+  body * { visibility: hidden; }
+  .printable, .printable * { visibility: visible; }
+  .printable { position: absolute; inset: 0; margin: 0; box-shadow: none; }
+  .no-print { display: none !important; }
+}
+.certificate {
+  border: 10px double var(--c-jummah); border-radius: 20px; padding: 36px 28px; text-align: center; background: #fffdf6;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
 
 /* Parent */
 .parent-header {

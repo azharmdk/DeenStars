@@ -15,7 +15,9 @@ import {
   Trophy,
   User,
   Users,
-  Volume2,
+  BookOpen,
+  Bed,
+  Library,
 } from "lucide-react";
 import { api } from "../api";
 import {
@@ -26,17 +28,23 @@ import {
   useStreaks,
   useToday,
   useTodayCompletions,
+  useLibrary,
+  useSeason,
+  SIM_SEASON_KEY,
 } from "../data";
-import { BackLink, Celebration, ListenButton, Notice, ProgressBar, Sheet, speak } from "../components/common";
+import { BackLink, Celebration, Notice, ProgressBar, Sheet } from "../components/common";
+import { Scene } from "../components/scenes";
 import { Avatar, CATEGORY_STYLE, CategoryChip } from "../components/icons";
-import { Activity, Category, Child, Completion, displayTitle, isStreakActive, Streak, STREAK_CELEBRATIONS } from "../types";
+import { Activity, ageBandFor, Category, Child, Completion, displayTitle, isStreakActive, Story, Streak, STREAK_CELEBRATIONS } from "../types";
+import { Season } from "../hijri";
 import { greetingForHour, isFridayDayKey } from "../time";
 import { PlayTab } from "./Play";
-import { DuaCorner } from "./DuaCorner";
+import { Bedtime, DuaCorner, StoryLibrary, StoryReader, SurahLearning } from "./Learn";
+import { EidScreen, RamadanScreen, SeasonCard, ThemeCard } from "./Seasonal";
 import { testerToolsEnabled } from "../devFlags";
 
 type Tab = "home" | "checklist" | "play" | "stars" | "me";
-type Sub = null | "jummah" | "duas";
+type Sub = null | "jummah" | "duas" | "surahs" | "stories" | "story" | "bedtime" | "ramadan" | "eid";
 
 const SIM_FRIDAY_KEY = "ds_sim_friday";
 
@@ -50,7 +58,11 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
   const completions = useTodayCompletions(child.id, dayKey);
   const stars = useStarRollups(child.id, dayKey, weekKey);
   const streaks = useStreaks(child.id);
-  const mine = useMemo(() => (activities ? activitiesForChild(activities, child, friday) : []), [activities, child, friday]);
+  const seasonInfo = useSeason(child, dayKey);
+  const season = seasonInfo.season;
+  const mine = useMemo(() => (activities ? activitiesForChild(activities, child, friday, season) : []), [activities, child, friday, season]);
+  const [story, setStory] = useState<Story | null>(null);
+  const stories = useLibrary<Story>("stories").items;
 
   const [open, setOpen] = useState<Activity | null>(null);
   const [celebrate, setCelebrate] = useState<{ text: string; stars?: number } | null>(null);
@@ -74,16 +86,38 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
     setSimFriday(v);
   }
 
-  const daily = mine.filter((a) => a.category !== "jummah");
-  const jummah = mine.filter((a) => a.category === "jummah");
+  // The daily checklist shows everyday items. Jummah, Ramadan and Eid items have their own screens.
+  const daily = mine.filter((a) => (a.frequency ?? "daily") === "daily");
+  const jummah = mine.filter((a) => a.frequency === "jummahOnly");
+  const week = Number(weekKey.split("-W")[1]); // Friday story changes each ISO week
+  const bandStories = stories?.filter((s) => s.ageBand === ageBandFor(child)) ?? [];
+  const fridayStory = bandStories.length ? bandStories[week % bandStories.length] : undefined;
+  const openStory = (s: Story) => {
+    setStory(s);
+    setSub("story");
+  };
   const doneCount = daily.filter((a) => completions[a.id]?.status === "done").length;
   const featured = featuredForDay(daily, dayKey);
 
   let body;
   if (sub === "jummah") {
-    body = <JummahScreen items={jummah} completions={completions} streaks={streaks} today={dayKey} onOpen={setOpen} onBack={() => setSub(null)} />;
+    body = (
+      <JummahScreen items={jummah} completions={completions} streaks={streaks} today={dayKey} onOpen={setOpen} onBack={() => setSub(null)} story={fridayStory} onStory={openStory} />
+    );
   } else if (sub === "duas") {
     body = <DuaCorner child={child} onBack={() => setSub(null)} />;
+  } else if (sub === "surahs") {
+    body = <SurahLearning child={child} onBack={() => setSub(null)} />;
+  } else if (sub === "stories") {
+    body = <StoryLibrary child={child} onBack={() => setSub(null)} onOpen={openStory} />;
+  } else if (sub === "story" && story) {
+    body = <StoryReader story={story} onBack={() => setSub("stories")} />;
+  } else if (sub === "bedtime") {
+    return <Bedtime child={child} dayKey={dayKey} onExit={() => setSub(null)} />;
+  } else if (sub === "ramadan" && season.kind === "ramadan") {
+    body = <RamadanScreen child={child} dayKey={dayKey} day={season.day} activities={mine} completions={completions} onOpen={setOpen} onBack={() => setSub(null)} />;
+  } else if (sub === "eid") {
+    body = <EidScreen season={season} activities={mine} completions={completions} onOpen={setOpen} onBack={() => setSub(null)} />;
   } else if (tab === "home") {
     body = (
       <HomeTab
@@ -101,6 +135,11 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
         onOpen={setOpen}
         onTab={setTab}
         onSub={setSub}
+        season={season}
+        seasonInfo={seasonInfo}
+        activities={mine}
+        completions={completions}
+        dayKey={dayKey}
       />
     );
   } else if (tab === "checklist") {
@@ -128,6 +167,7 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
         onGrownUps={onGrownUps}
         pendingCount={pendingCount}
         onDuas={() => setSub("duas")}
+        onSurahs={() => setSub("surahs")}
         simFriday={simFriday}
         onSimFriday={toggleSimFriday}
       />
@@ -215,6 +255,11 @@ function HomeTab(props: {
   onOpen: (a: Activity) => void;
   onTab: (t: Tab) => void;
   onSub: (s: Sub) => void;
+  season: Season;
+  seasonInfo: ReturnType<typeof useSeason>;
+  activities: Activity[];
+  completions: Record<string, Completion>;
+  dayKey: string;
 }) {
   const greeting = `Assalamu Alaikum, ${props.child.nickname}`;
   const f = props.featured;
@@ -229,10 +274,14 @@ function HomeTab(props: {
             <h2>{greeting}</h2>
           </div>
         </div>
-        <button className="icon-btn" aria-label="Listen to greeting" onClick={() => speak(greeting)}>
-          <Volume2 size={20} aria-hidden="true" />
-        </button>
       </div>
+
+      <SeasonCard
+        season={props.season}
+        daysToRamadan={props.seasonInfo.daysToRamadan}
+        hijri={props.seasonInfo.hijri}
+        onOpen={(s) => props.onSub(s === "ramadan" ? "ramadan" : "eid")}
+      />
 
       {f ? (
         <div className="hero stack" style={{ gap: 16 }}>
@@ -330,7 +379,38 @@ function HomeTab(props: {
             <span className="sub">Quiz and games</span>
           </span>
         </button>
+        <button className="tile" onClick={() => props.onSub("stories")}>
+          <span className="icon-chip" style={{ background: "var(--c-salah-bg)", color: "var(--c-salah)" }} aria-hidden="true">
+            <Library size={22} />
+          </span>
+          <span className="stack" style={{ gap: 2 }}>
+            Stories
+            <span className="sub">Prophet stories</span>
+          </span>
+        </button>
+        <button className="tile" onClick={() => props.onSub("surahs")}>
+          <span className="icon-chip" style={{ background: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
+            <BookOpen size={22} />
+          </span>
+          <span className="stack" style={{ gap: 2 }}>
+            Short Surahs
+            <span className="sub">Listen and repeat</span>
+          </span>
+        </button>
       </div>
+
+      <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "#1b2547", borderColor: "#1b2547", color: "#eef1fb" }} onClick={() => props.onSub("bedtime")}>
+        <span className="icon-chip" style={{ background: "#2a3563", color: "#f2c14e" }} aria-hidden="true">
+          <Bed size={22} />
+        </span>
+        <span className="stack" style={{ gap: 2, flex: 1 }}>
+          <span>Bedtime</span>
+          <span className="sub" style={{ color: "#b7c0dd" }}>A story and bedtime duas</span>
+        </span>
+        <ChevronRight size={20} color="#b7c0dd" aria-hidden="true" />
+      </button>
+
+      <ThemeCard dayKey={props.dayKey} activities={props.activities} completions={props.completions} onOpen={props.onOpen} />
     </div>
   );
 }
@@ -437,6 +517,8 @@ function JummahScreen(props: {
   today: string;
   onOpen: (a: Activity) => void;
   onBack: () => void;
+  story?: Story;
+  onStory: (s: Story) => void;
 }) {
   const done = props.items.filter((a) => props.completions[a.id]?.status === "done").length;
   const selfItems = props.items.filter((a) => a.verification === "self");
@@ -479,6 +561,15 @@ function JummahScreen(props: {
             <p className="muted small">You finished your Friday activities.</p>
           </div>
         </div>
+      )}
+      {props.story && (
+        <button className="tile" style={{ padding: 0, overflow: "hidden", gap: 0, minHeight: 0 }} onClick={() => props.onStory(props.story!)}>
+          <Scene id={props.story.coverScene} />
+          <span className="stack" style={{ gap: 2, padding: "10px 12px 12px" }}>
+            <span className="eyebrow">This Friday's story</span>
+            <span>{props.story.title}</span>
+          </span>
+        </button>
       )}
       <span className="section-title">I can do it</span>
       <div className="list">{selfItems.map(row)}</div>
@@ -536,7 +627,6 @@ function TaskSheet(props: {
               </span>
             )}
           </div>
-          <ListenButton text={title} compact />
         </div>
         <p className="muted">{a.description.en}</p>
         <div className="notice calm">{a.educationalExplanation.en}</div>
@@ -653,9 +743,17 @@ function MeTab(props: {
   onGrownUps: () => void;
   pendingCount: number;
   onDuas: () => void;
+  onSurahs: () => void;
   simFriday: boolean;
   onSimFriday: (v: boolean) => void;
 }) {
+  const [simSeason, setSimSeason] = useState(() => localStorage.getItem(SIM_SEASON_KEY) ?? "");
+  function changeSeason(v: string) {
+    if (v) localStorage.setItem(SIM_SEASON_KEY, v);
+    else localStorage.removeItem(SIM_SEASON_KEY);
+    setSimSeason(v);
+    window.location.reload();
+  }
   return (
     <div className="screen">
       <div className="card stack center" style={{ padding: 24 }}>
@@ -669,6 +767,11 @@ function MeTab(props: {
           <span className="title">My Duas</span>
           <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
         </button>
+        <button className="list-item" onClick={props.onSurahs}>
+          <CategoryChip category="quran" />
+          <span className="title">My Surahs</span>
+          <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
+        </button>
       </div>
       {testerToolsEnabled && (
         <div className="card stack">
@@ -677,6 +780,17 @@ function MeTab(props: {
             <input type="checkbox" className="checkbox" checked={props.simFriday} onChange={(e) => props.onSimFriday(e.target.checked)} />
             <span>Pretend today is Friday (to test Jummah)</span>
           </label>
+          <div className="field">
+            <label htmlFor="simSeason">Pretend it is</label>
+            <select id="simSeason" className="input" value={simSeason} onChange={(e) => changeSeason(e.target.value)}>
+              <option value="">Normal day (real date)</option>
+              {[1, 5, 15, 27, 30].map((d) => (
+                <option key={d} value={`ramadan:${d}`}>Ramadan, day {d}</option>
+              ))}
+              <option value="eidFitr:1">Eid al-Fitr</option>
+              <option value="eidAdha:1">Eid al-Adha</option>
+            </select>
+          </div>
         </div>
       )}
       <button className="btn btn-secondary btn-block" style={{ marginTop: "auto", position: "relative" }} onClick={props.onGrownUps}>

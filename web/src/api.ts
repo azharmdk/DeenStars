@@ -55,6 +55,15 @@ export const api = {
     }),
   recordTogether: (childId: string, approvalId: string, together: boolean, parentSessionId: string) =>
     call<{ ok: true }>("recordTogether", { childId, approvalId, together, parentSessionId }),
+  updateLearningProgress: (input: {
+    childId: string;
+    kind: "dua" | "surah";
+    itemId: string;
+    state: "notStarted" | "learning" | "practising" | "learned";
+    parentSessionId?: string;
+  }) => call<{ state: string; starsAwarded: number }>("updateLearningProgress", input),
+  updateParentSettings: (input: { parentSessionId: string; hijriCountry?: string; hijriAdjust?: number }) =>
+    call<{ ok: true }>("updateParentSettings", input),
 };
 
 /** Friendly message for errors. Child-facing screens never show raw errors. */

@@ -28,6 +28,7 @@ import { Avatar, CategoryChip } from "../components/icons";
 import { AgeGroup, Approval, Category, Child, Difficulty, DIFFICULTY_LABEL, displayTitle, isStreakActive } from "../types";
 import { addDays, dayKeyFor, isFridayDayKey, relativeDayLabel } from "../time";
 import { ChildForm } from "./Onboarding";
+import { HijriSettingsCard, LearningConfirm } from "./ParentLearning";
 
 /** Parental gate: an adult reading-and-arithmetic check that young children can't easily pass. */
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
@@ -149,7 +150,7 @@ export function ParentApp(props: {
       {tab === "overview" && <Overview children={props.children} approvals={approvals} onApprovals={() => setTab("approvals")} />}
       {tab === "approvals" && <Approvals children={props.children} approvals={approvals} sessionId={props.sessionId} guarded={guarded} />}
       {tab === "children" && <ChildrenAdmin children={props.children} sessionId={props.sessionId} guarded={guarded} />}
-      {tab === "settings" && <Settings />}
+      {tab === "settings" && <Settings children={props.children} sessionId={props.sessionId} guarded={guarded} />}
       <nav className="tabbar" aria-label="Parent">
         {tabs.map(({ id, Icon, label }) => (
           <button key={id} className="tab" aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>
@@ -523,6 +524,7 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
       <button className="btn btn-primary btn-block" disabled={busy} onClick={save}>Save changes</button>
 
       <MakeUpYesterday child={c} sessionId={props.sessionId} guarded={props.guarded} />
+      <LearningConfirm child={c} sessionId={props.sessionId} guarded={props.guarded} />
 
       <div className="card stack" style={{ marginTop: 16, borderColor: "#efd3cd" }}>
         <h3>Delete this profile</h3>
@@ -539,7 +541,7 @@ function EditChild(props: { child: Child; sessionId: string; guarded: <T>(fn: ()
   );
 }
 
-function Settings() {
+function Settings(props: { children: Child[]; sessionId: string; guarded: <T>(fn: () => Promise<T>) => Promise<T> }) {
   return (
     <div className="screen">
       <h1>Settings</h1>
@@ -556,6 +558,7 @@ function Settings() {
           <span className="title">Sign out</span>
         </button>
       </div>
+      <HijriSettingsCard children={props.children} sessionId={props.sessionId} guarded={props.guarded} />
       <Notice tone="calm">Notifications, leaderboard opt-in, data export and account deletion will come in later builds.</Notice>
     </div>
   );

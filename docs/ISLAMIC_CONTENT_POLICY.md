@@ -143,3 +143,23 @@ Failures produce a readable report in the admin portal. The publish function re-
 ## 10. Seed content (Phase 2 onwards)
 
 No religious seed content is written into the app or the repository by AI without human verification. The first content set (about 30 checklist items, 12 duas, 3 short Surahs, 60 quiz questions, 8 game content packs) is drafted by the content team, reviewed under this policy, and imported with the admin tool or a seed script. Placeholder items in development builds are marked `isPlaceholder: true` and cannot be published to staging or production.
+
+## 11. Sources in use (decision 2026-11: free and open sources only, no permission requests for now)
+
+Arabic text and audio are always imported from these sources by reference, never typed by hand. Each stored item keeps its source, edition and item ID so a reviewer can open the original.
+
+| Content | Source | Licence or terms | Notes |
+|---|---|---|---|
+| Quran Arabic text | Tanzil Project, Uthmani text, served by the AlQuran Cloud API (`quran-uthmani`) | CC BY 3.0. Verbatim only, credit Tanzil and link to tanzil.net | Never modified. Display changes are UI only |
+| Quran English translation | Marmaduke Pickthall, *The Meaning of the Glorious Koran* (1930), via AlQuran Cloud (`en.pickthall`) | Public domain (US: published 1930; author died 1936) | Old-fashioned wording. Kid-friendly wording lives in our own UI copy, never inside the translation |
+| Quran transliteration | AlQuran Cloud (`en.transliteration`) | Free to use, no stated licence | Confirm before public launch |
+| Quran recitation | Sheikh Mahmoud Khalil al-Husary (Murattal) and Sheikh al-Husayni al-Azazi with children, from the Islamic Network CDN used by AlQuran Cloud and EveryAyah | Free to use, no stated licence | Files are copied to DeenStars hosting so the app contacts no third-party hosts. Confirm before public launch |
+| Duas (Arabic, English meaning, audio) | *Hisn al-Muslim* (Fortress of the Muslim) by Sa'id ibn Ali ibn Wahf al-Qahtani, via the hisnmuslim.com API | Free to use, no stated licence | Human-recorded audio. Copied to DeenStars hosting (the source serves plain HTTP). The API has no hadith references, so the reviewer adds the collection and number from Sunnah.com before production |
+| Prophet stories | References only: the Quran verses listed on each story scene, with Ibn Kathir's *Tafsir* and *Qisas al-Anbiya* for context | Story wording is written by the DeenStars team (AI-assisted draft) | Each scene cites its verses. No invented dialogue or events. Status "pending scholar review" until approved |
+| Story and scene images | Original DeenStars vector scenes drawn in code (no generative AI images) | Owned by DeenStars | No human or Prophet figures at all in Prophet stories: only scenery, animals and objects |
+| Hijri calendar | Umm al-Qura calendar from the Unicode CLDR / ICU data built into browsers and Node | Open (Unicode licence) | Per-country day adjustment, set by admin, plus a parent adjustment of plus or minus one day |
+
+Rules that follow from the sources:
+- **No synthetic voices.** No text-to-speech or AI audio anywhere in the app. Audio exists only where a human qari or reciter recording exists. Stories are read aloud by the parent.
+- Dev and QE builds may show sourced items with status "pending scholar review", clearly labelled. Staging and production show only approved items (§6 and §7).
+- Licences marked "confirm before public launch" are tracked in `OPEN_QUESTIONS_AND_RISKS.md` (D-9).
