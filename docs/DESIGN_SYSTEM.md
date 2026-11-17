@@ -12,7 +12,26 @@ v0.2 changes:
 - The cartoon mascot is replaced by a crescent-and-star brand mark until a professional mascot is commissioned (D-4).
 - A subtle eight-point star lattice is the only decorative pattern, used on brand surfaces.
 
-## 1. Colour tokens
+## 0. v0.3 visual refresh (supersedes conflicting v0.2 rules)
+
+Reviewer feedback said the UI felt flat and dated next to current kids' apps. References were studied for patterns only. Nothing is copied. Patterns adopted:
+
+- **Light and dark themes.** Dark is deep green-black with mint accents. It follows the system setting, with an Auto / Light / Dark switch in the child's Me tab (`web/src/theme.ts`). Every colour is a semantic token with a dark value. Hero surfaces keep white text in both themes.
+- **Bolder shapes.** Radii: hero 28, cards and tiles 24, controls 16, chips 12. Buttons are full pills.
+- **Chunky buttons.** A solid 4 px edge under each button that compresses on press, so controls look tappable to children.
+- **Tinted feature tiles.** Home destinations use a category tint fill with a solid round icon badge (`tone-*` classes), not outlined white boxes.
+- **Gradient hero.** A green gradient with the star lattice and a soft circle. Gradients are now allowed on hero surfaces only.
+- **Pill tab bar.** Rounded top corners. The active tab gets a soft pill behind its icon, and labels stay visible.
+- **Star counter pill.** A gold pill on Home gives rewards a constant presence.
+- **Filled filter chips.** The active chip uses the primary colour.
+
+Changed tokens: `primary` #0B7A5C (dark #3CCB9C), `accent` #E0A100, `bg` #F4F8F6, `surface` #FFFFFF, `border` #DDE7E2, `ink` #14231F. New tokens: `on-primary`, `accent-ink`, `accent-border`, `info-ink`, `nav-bg`, `hero-from`, `hero-to`, `hero-ink`. See `web/src/styles.css` for all light and dark values.
+
+Contrast: white on `primary` is about 5.4:1. Dark theme text is `on-primary` #05241B on #3CCB9C (above 8:1). Check the new category tints in both themes with the accessibility audit before release.
+
+Still open: a commissioned illustration and mascot set (D-4) would add the character-led feel in the references. Until then, icons stand in.
+
+## 1. Colour tokens (v0.2 values, see section 0 for current)
 
 Names are semantic. Values are mirrored in `web/src/styles.css` and must be mirrored in the SwiftUI `DSDesignSystem`.
 

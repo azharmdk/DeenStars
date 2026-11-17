@@ -42,6 +42,7 @@ import { PlayTab } from "./Play";
 import { Bedtime, DuaCorner, StoryLibrary, StoryReader, SurahLearning } from "./Learn";
 import { EidScreen, RamadanScreen, SeasonCard, ThemeCard } from "./Seasonal";
 import { testerToolsEnabled } from "../devFlags";
+import { getThemePref, setThemePref, type ThemePref } from "../theme";
 
 type Tab = "home" | "checklist" | "play" | "stars" | "me";
 type Sub = null | "jummah" | "duas" | "surahs" | "stories" | "story" | "bedtime" | "ramadan" | "eid";
@@ -214,7 +215,9 @@ function TabBar({ tab, onTab }: { tab: Tab | null; onTab: (t: Tab) => void }) {
     <nav className="tabbar" aria-label="Main">
       {tabs.map(({ id, Icon, label }) => (
         <button key={id} className="tab" aria-current={tab === id ? "page" : undefined} onClick={() => onTab(id)}>
-          <Icon size={24} strokeWidth={tab === id ? 2.4 : 2} aria-hidden="true" />
+          <span className="tab-icon">
+            <Icon size={24} strokeWidth={tab === id ? 2.4 : 2} aria-hidden="true" />
+          </span>
           {label}
         </button>
       ))}
@@ -274,6 +277,10 @@ function HomeTab(props: {
             <h2>{greeting}</h2>
           </div>
         </div>
+        <button className="pill-gold" style={{ cursor: "pointer" }} onClick={() => props.onTab("stars")} aria-label={`${props.starsWeek} stars this week. Open My Stars`}>
+          <Star size={20} fill="currentColor" aria-hidden="true" />
+          {props.starsWeek}
+        </button>
       </div>
 
       <SeasonCard
@@ -304,7 +311,7 @@ function HomeTab(props: {
           </div>
           {fStatus === "done" ? (
             <div className="row" style={{ gap: 8, fontWeight: 700 }}>
-              <span className="check-circle done" style={{ borderColor: "#fff", background: "#fff", color: "var(--primary)" }} aria-hidden="true">
+              <span className="check-circle done" style={{ borderColor: "#fff", background: "#fff", color: "var(--hero-ink)" }} aria-hidden="true">
                 <Check size={16} strokeWidth={3} />
               </span>
               Done today. Well done!
@@ -314,7 +321,7 @@ function HomeTab(props: {
               <Star size={20} color="#f2c14e" aria-hidden="true" /> Waiting for a grown-up
             </div>
           ) : (
-            <button className="btn btn-child" style={{ background: "#fff", color: "var(--primary-strong)" }} onClick={() => props.onOpen(f)}>
+            <button className="btn btn-child" style={{ background: "#fff", color: "var(--hero-ink)", ["--edge" as string]: "rgba(0,0,0,0.22)" }} onClick={() => props.onOpen(f)}>
               Let's do it
             </button>
           )}
@@ -331,8 +338,8 @@ function HomeTab(props: {
       )}
 
       {props.friday && (
-        <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "var(--c-jummah-bg)", borderColor: "#d3d9ea" }} onClick={() => props.onSub("jummah")}>
-          <span className="icon-chip" style={{ background: "var(--c-jummah)", color: "#fff" }} aria-hidden="true">
+        <button className="tile" style={{ minHeight: 0, flexDirection: "row", alignItems: "center", background: "var(--c-jummah-bg)", borderColor: "transparent" }} onClick={() => props.onSub("jummah")}>
+          <span className="icon-chip" style={{ background: "#2a3a6a", color: "#fff" }} aria-hidden="true">
             <MoonStar size={22} />
           </span>
           <span className="stack" style={{ gap: 2, flex: 1 }}>
@@ -344,9 +351,9 @@ function HomeTab(props: {
       )}
 
       <div className="grid2">
-        <button className="tile" onClick={() => props.onTab("checklist")}>
-          <span className="icon-chip" style={{ background: "var(--primary-soft)", color: "var(--primary)" }} aria-hidden="true">
-            <ListChecks size={22} />
+        <button className="tile tone-habit" onClick={() => props.onTab("checklist")}>
+          <span className="icon-chip" aria-hidden="true">
+            <ListChecks size={24} />
           </span>
           <span className="stack" style={{ gap: 6, width: "100%" }}>
             Today's checklist
@@ -354,43 +361,45 @@ function HomeTab(props: {
             <span className="sub">{props.doneCount} of {props.total} done</span>
           </span>
         </button>
-        <button className="tile" onClick={() => props.onTab("stars")}>
-          <span className="icon-chip" style={{ background: "var(--accent-soft)", color: "var(--accent)" }} aria-hidden="true">
-            <Trophy size={22} />
+        <button className="tile tone-dua" onClick={() => props.onTab("stars")}>
+          <span className="icon-chip" aria-hidden="true">
+            <Trophy size={24} />
           </span>
           <span className="stack" style={{ gap: 2 }}>
             This week
             <span className="sub">{props.starsWeek} stars earned</span>
           </span>
         </button>
-        <button className="tile" onClick={() => props.onSub("duas")}>
-          <CategoryChip category="dua" />
+        <button className="tile tone-manners" onClick={() => props.onSub("duas")}>
+          <span className="icon-chip" aria-hidden="true">
+            <HandHeart size={24} />
+          </span>
           <span className="stack" style={{ gap: 2 }}>
             Dua Corner
             <span className="sub">Learn a dua</span>
           </span>
         </button>
-        <button className="tile" onClick={() => props.onTab("play")}>
-          <span className="icon-chip" style={{ background: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
-            <Puzzle size={22} />
+        <button className="tile tone-quran" onClick={() => props.onTab("play")}>
+          <span className="icon-chip" aria-hidden="true">
+            <Puzzle size={24} />
           </span>
           <span className="stack" style={{ gap: 2 }}>
             Play & Learn
             <span className="sub">Quiz and games</span>
           </span>
         </button>
-        <button className="tile" onClick={() => props.onSub("stories")}>
-          <span className="icon-chip" style={{ background: "var(--c-salah-bg)", color: "var(--c-salah)" }} aria-hidden="true">
-            <Library size={22} />
+        <button className="tile tone-salah" onClick={() => props.onSub("stories")}>
+          <span className="icon-chip" aria-hidden="true">
+            <Library size={24} />
           </span>
           <span className="stack" style={{ gap: 2 }}>
             Stories
             <span className="sub">Prophet stories</span>
           </span>
         </button>
-        <button className="tile" onClick={() => props.onSub("surahs")}>
-          <span className="icon-chip" style={{ background: "var(--c-quran-bg)", color: "var(--c-quran)" }} aria-hidden="true">
-            <BookOpen size={22} />
+        <button className="tile tone-deed" onClick={() => props.onSub("surahs")}>
+          <span className="icon-chip" aria-hidden="true">
+            <BookOpen size={24} />
           </span>
           <span className="stack" style={{ gap: 2 }}>
             Short Surahs
@@ -738,6 +747,34 @@ function StarsTab(props: {
   );
 }
 
+function ThemeSwitch() {
+  const [pref, setPref] = useState<ThemePref>(getThemePref);
+  const options: { id: ThemePref; label: string }[] = [
+    { id: "system", label: "Auto" },
+    { id: "light", label: "Light" },
+    { id: "dark", label: "Dark" },
+  ];
+  return (
+    <div className="card stack">
+      <span className="eyebrow">Appearance</span>
+      <div className="segmented" role="group" aria-label="Theme">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            aria-pressed={pref === o.id}
+            onClick={() => {
+              setThemePref(o.id);
+              setPref(o.id);
+            }}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MeTab(props: {
   child: Child;
   onGrownUps: () => void;
@@ -773,6 +810,7 @@ function MeTab(props: {
           <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
         </button>
       </div>
+      <ThemeSwitch />
       {testerToolsEnabled && (
         <div className="card stack">
           <span className="eyebrow">Tester tools</span>

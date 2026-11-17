@@ -2,7 +2,10 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { Gallery } from "./screens/Gallery";
+import { applyTheme, getThemePref } from "./theme";
 import "./styles.css";
+
+applyTheme(getThemePref());
 
 const gallery = import.meta.env.DEV && new URLSearchParams(window.location.search).get("gallery") === "scenes";
 
