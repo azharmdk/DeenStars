@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { BookOpen, Check, ChevronLeft, ChevronRight, MoonStar, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Check, ChevronLeft, ChevronRight, Heart, MoonStar, Search, ShieldCheck } from "lucide-react";
 import { api } from "../api";
+import { useDuaPrefs } from "../duaPrefs";
 import { useConfig, useLearningProgress, useLibrary } from "../data";
 import { ArabicText, cleanMeaning, cleanTransliteration, translationCredit } from "../components/ArabicText";
 import { AudioButton, useAudioQueue } from "../components/audio";
@@ -8,17 +9,10 @@ import { BackLink, Busy, Notice } from "../components/common";
 import { DUA_CATEGORY_ART } from "../components/icons";
 import { Art, Banner, SectionHeader } from "../components/ui";
 import { BedtimeScene, Scene } from "../components/scenes";
-import { duaSlug, quranOrder, storyPageCount, surahSlug } from "../content";
+import { DUA_BROWSE, duaSlug, quranOrder, storyPageCount, surahSlug } from "../content";
 import { AGE_BAND_LABEL, ageBandFor, Child, Dua, isGuest, LEARN_LABEL, LearnState, Story, Surah } from "../types";
 
-const DUA_GROUPS: { id: Dua["category"]; label: string }[] = [
-  { id: "sleep", label: "Sleeping" },
-  { id: "wake", label: "Waking up" },
-  { id: "eating", label: "Eating" },
-  { id: "bathroom", label: "Bathroom" },
-  { id: "home", label: "Home and dressing" },
-  { id: "rabbana", label: "Duas from the Quran" },
-];
+
 
 function ReviewBanner() {
   return <div className="review-banner" role="note">Sourced text, pending scholar review</div>;
@@ -70,94 +64,216 @@ function sourceLine(d: Dua): string {
 
 // ---------------- Dua Corner ----------------
 
+function duaArt(d: Dua) {
+  return DUA_CATEGORY_ART[d.category] ?? "palms-up";
+}
+
+function DuaRow({ d, child, state, onOpen, favorite }: { d: Dua; child: Child; state: LearnState; onOpen: () => void; favorite: boolean }) {
+  return (
+    <button className="list-item" onClick={onOpen}>
+      <span className="art-chip" style={{ background: "var(--c-dua-bg)", width: 52, height: 52, borderRadius: 16 }} aria-hidden="true">
+        <Art name={duaArt(d)} size={36} />
+      </span>
+      <span className="stack" style={{ gap: 2, flex: 1 }}>
+        <span className="strong">{d.title}</span>
+        {!isGuest(child) && <span className="small faint">{LEARN_LABEL[state]}</span>}
+      </span>
+      {favorite && <Heart size={18} fill="currentColor" color="var(--c-dua)" aria-label="Favourite" />}
+      {state === "learned" ? (
+        <span className="check-circle done" aria-hidden="true"><Check size={16} strokeWidth={3} /></span>
+      ) : (
+        <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
+      )}
+    </button>
+  );
+}
+
+function DuaDetail(props: { d: Dua; child: Child; state: LearnState; favorite: boolean; onFavorite: () => void; onBack: () => void; queue: ReturnType<typeof useAudioQueue> }) {
+  const { d, child, state } = props;
+  const cat = DUA_BROWSE.find((c) => c.from.includes(d.category));
+  const short = d.concise ?? null;
+  return (
+    <div className="screen reading">
+      <BackLink onClick={props.onBack} label={cat?.label ?? "Dua Corner"} />
+      <ReviewBanner />
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        <div className="stack" style={{ gap: 4 }}>
+          <span className="eyebrow" style={{ color: "var(--c-dua)" }}>{cat?.label}</span>
+          <h1>{short ? "Before eating" : d.title}</h1>
+          <span className="muted small">{d.whenToRecite}</span>
+        </div>
+        <button type="button" className="icon-btn" aria-pressed={props.favorite} aria-label={props.favorite ? "Remove from favourites" : "Add to favourites"} onClick={props.onFavorite}>
+          <Heart size={22} fill={props.favorite ? "currentColor" : "none"} color="var(--c-dua)" aria-hidden="true" />
+        </button>
+      </div>
+      <div className="card stack" style={{ gap: 12 }}>
+        {short ? (
+          <>
+            <ArabicText text={short.arabic} quran={false} size={34} />
+            <p style={{ textAlign: "center" }}>{short.translation}</p>
+          </>
+        ) : (
+          <>
+            <ArabicText text={d.arabic} quran={d.source.type === "quran"} highlightFromWord={d.highlightFromWord} size={28} />
+            {d.transliteration && <p className="small muted transliteration">{cleanTransliteration(d.transliteration)}</p>}
+            <p style={{ textAlign: "center" }}>{cleanMeaning(d.translation)}</p>
+            {d.repeat > 1 && <span className="tiny faint" style={{ textAlign: "center" }}>Say it {d.repeat} times</span>}
+          </>
+        )}
+      </div>
+      {d.ifForgotten && (
+        <details className="card dua-more">
+          <summary className="strong">{d.ifForgotten.label}</summary>
+          <div className="stack" style={{ gap: 12, marginTop: 12 }}>
+            <ArabicText text={d.ifForgotten.arabic} quran={false} size={30} />
+            <p style={{ textAlign: "center" }}>{d.ifForgotten.translation}</p>
+          </div>
+        </details>
+      )}
+      {/* The recording is of the long narration, so it is not offered next to the short version. */}
+      {d.audio && !short && <AudioButton id={d.id} queue={props.queue} srcs={[d.audio.path]} label="Listen to the dua" reciter={d.audio.reciter} variant="primary" />}
+      {!isGuest(child) && <ProgressPicker childId={child.id} kind="dua" itemId={d.id} state={state} />}
+      <div className="row tiny faint" style={{ gap: 6, alignItems: "flex-start" }}>
+        <ShieldCheck size={16} aria-hidden="true" />
+        <span>Source: {sourceLine(d)}</span>
+      </div>
+    </div>
+  );
+}
+
 /**
- * Dua Corner. On the website the open dua follows the URL (/duas/before-sleeping): pass `selected`
- * and `onSelect`. Inside the signed-in app it keeps its own state, as before.
+ * Dua Corner. Landing page with categories, search, favourites and recently viewed.
+ * On the website the view follows the URL: /duas, /duas/category/morning, /duas/before-sleeping.
+ * Pass `selected` ("category/morning" or a dua slug) and `onSelect`. Inside the signed-in app it keeps its own state.
+ * Favourites and recents live on this device only.
  */
-export function DuaCorner({ child, onBack, selected, onSelect }: { child: Child; onBack: () => void; selected?: string | null; onSelect?: (slug: string | null) => void }) {
+export function DuaCorner({ child, onBack, selected, onSelect }: { child: Child; onBack: () => void; selected?: string | null; onSelect?: (sel: string | null) => void }) {
   const { items, error } = useLibrary<Dua>("duaLibrary");
   const progress = useLearningProgress(child.id, "dua");
-  const [local, setLocal] = useState<Dua | null>(null);
-  const open = onSelect ? items?.find((d) => duaSlug(d.id) === selected) ?? null : local;
-  const setOpen = (d: Dua | null) => (onSelect ? onSelect(d ? duaSlug(d.id) : null) : setLocal(d));
+  const prefs = useDuaPrefs();
+  const [local, setLocal] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const queue = useAudioQueue();
+  const sel = onSelect ? selected ?? null : local;
+  const setSel = (s: string | null) => {
+    queue.stop();
+    if (onSelect) onSelect(s);
+    else setLocal(s);
+  };
+  const openDua = items && sel && !sel.startsWith("category/") ? items.find((d) => duaSlug(d.id) === sel) ?? null : null;
+  const markViewed = prefs.markViewed;
+  const openId = openDua?.id;
+  useEffect(() => {
+    if (openId) markViewed(openId);
+  }, [openId, markViewed]);
 
-  if (open) {
-    const state = progress[open.id] ?? "notStarted";
+  const toSlug = (d: Dua) => duaSlug(d.id);
+  const backFor = (d: Dua) => {
+    const cat = DUA_BROWSE.find((c) => c.from.includes(d.category));
+    return cat ? `category/${cat.id}` : null;
+  };
+
+  if (openDua) {
     return (
-      <div className="screen reading">
-        <BackLink onClick={() => { queue.stop(); setOpen(null); }} label="Dua Corner" />
-        <ReviewBanner />
-        <div className="stack" style={{ gap: 4 }}>
-          <span className="eyebrow" style={{ color: "var(--c-dua)" }}>{DUA_GROUPS.find((g) => g.id === open.category)?.label}</span>
-          <h1>{open.title}</h1>
-          <span className="muted small">{open.whenToRecite}</span>
-        </div>
-        <div className="card stack" style={{ gap: 12 }}>
-          <ArabicText text={open.arabic} quran={open.source.type === "quran"} highlightFromWord={open.highlightFromWord} size={28} />
-          {open.transliteration && <p className="small muted transliteration">{cleanTransliteration(open.transliteration)}</p>}
-          <p style={{ textAlign: "center" }}>{cleanMeaning(open.translation)}</p>
-          {open.repeat > 1 && <span className="tiny faint" style={{ textAlign: "center" }}>Say it {open.repeat} times</span>}
-        </div>
-        {open.audio && (
-          <AudioButton id={open.id} queue={queue} srcs={[open.audio.path]} label="Listen to the dua" reciter={open.audio.reciter} variant="primary" />
+      <DuaDetail
+        d={openDua}
+        child={child}
+        state={progress[openDua.id] ?? "notStarted"}
+        favorite={prefs.favorites.includes(openDua.id)}
+        onFavorite={() => prefs.toggleFavorite(openDua.id)}
+        onBack={() => setSel(backFor(openDua))}
+        queue={queue}
+      />
+    );
+  }
+
+  const stateOf = (d: Dua) => progress[d.id] ?? "notStarted";
+  const row = (d: Dua) => <DuaRow key={d.id} d={d} child={child} state={stateOf(d)} favorite={prefs.favorites.includes(d.id)} onOpen={() => setSel(toSlug(d))} />;
+
+  // Category page
+  const catId = sel?.startsWith("category/") ? sel.slice("category/".length) : null;
+  const cat = catId ? DUA_BROWSE.find((c) => c.id === catId) : null;
+  if (cat) {
+    const list = items?.filter((d) => cat.from.includes(d.category)) ?? [];
+    return (
+      <div className="screen">
+        <BackLink onClick={() => setSel(null)} label="Dua Corner" />
+        <Banner tone="gold" art={cat.art} wide title={cat.label} sub={cat.blurb} />
+        {error && <Notice>We couldn't load the duas. Let's try again in a moment.</Notice>}
+        {!items && !error && <p className="muted">Loading…</p>}
+        {items && list.length === 0 && (
+          <div className="card stack" style={{ gap: 6, textAlign: "center" }}>
+            <strong>Coming soon</strong>
+            <p className="muted small">These duas are being checked by our reviewers before we share them. Please come back soon.</p>
+            <button className="btn btn-secondary" onClick={() => setSel(null)}>See all dua groups</button>
+          </div>
         )}
-        {!isGuest(child) && <ProgressPicker childId={child.id} kind="dua" itemId={open.id} state={state} />}
-        <div className="row tiny faint" style={{ gap: 6, alignItems: "flex-start" }}>
-          <ShieldCheck size={16} aria-hidden="true" />
-          <span>Source: {sourceLine(open)}</span>
-        </div>
+        {list.length > 0 && <div className="list">{list.map(row)}</div>}
       </div>
     );
   }
 
+  // Landing page
+  const q = query.trim().toLowerCase();
+  const results = items && q ? items.filter((d) => `${d.title} ${d.whenToRecite} ${cleanMeaning(d.translation)}`.toLowerCase().includes(q)) : [];
+  const byId = (ids: string[]) => ids.map((id) => items?.find((d) => d.id === id)).filter((d): d is Dua => !!d);
+  const favs = byId(prefs.favorites);
+  const recents = byId(prefs.recent);
   const learned = items ? items.filter((d) => progress[d.id] === "learned").length : 0;
   return (
     <div className="screen">
       <BackLink onClick={onBack} />
-      <Banner tone="gold" art="palms-up" wide title="Dua Corner" sub={isGuest(child) ? "Learn a dua" : `${learned} of ${items?.length ?? 0} learned`}>
+      <Banner tone="gold" art="palms-up" wide title="Dua Corner" sub={isGuest(child) ? "Pick a time of day" : `${learned} of ${items?.length ?? 0} learned`}>
         {!isGuest(child) && <span className="progress" style={{ background: "rgba(255,255,255,0.28)", marginTop: 8 }}>
           <span style={{ display: "block", height: "100%", borderRadius: 999, background: "#fff", width: `${items?.length ? (learned / items.length) * 100 : 0}%` }} />
         </span>}
       </Banner>
       {error && <Notice>We couldn't load the duas. Let's try again in a moment.</Notice>}
-      {!items && !error && <p className="muted">Loading…</p>}
-      {items &&
-        DUA_GROUPS.map((g) => {
-          const list = items.filter((d) => d.category === g.id);
-          if (list.length === 0) return null;
-          const art = DUA_CATEGORY_ART[g.id] ?? "palms-up";
-          return (
-            <div key={g.id} className="stack" style={{ gap: 8 }}>
-              <SectionHeader title={g.label} />
-              <div className="list">
-                {list.map((d) => {
-                  const s = progress[d.id] ?? "notStarted";
-                  return (
-                    <button key={d.id} className="list-item" onClick={() => setOpen(d)}>
-                      <span className="art-chip" style={{ background: "var(--c-dua-bg)", width: 52, height: 52, borderRadius: 16 }} aria-hidden="true">
-                        <Art name={art} size={36} />
-                      </span>
-                      <span className="stack" style={{ gap: 2, flex: 1 }}>
-                        <span className="strong">{d.title}</span>
-                        {!isGuest(child) && <span className="small faint">{LEARN_LABEL[s]}</span>}
-                      </span>
-                      {s === "learned" ? (
-                        <span className="check-circle done" aria-hidden="true"><Check size={16} strokeWidth={3} /></span>
-                      ) : (
-                        <ChevronRight size={20} color="var(--ink-3)" aria-hidden="true" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+      <div className="field">
+        <label htmlFor="dua-search" className="label">Find a dua</label>
+        <div className="search-box">
+          <Search size={18} aria-hidden="true" />
+          <input id="dua-search" className="input" type="search" placeholder="Search duas" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
+        </div>
+      </div>
+      {q ? (
+        <div className="stack" style={{ gap: 8 }}>
+          <SectionHeader title={`Results for "${query.trim()}"`} />
+          {items && results.length === 0 ? <p className="muted">No duas found. Try another word.</p> : <div className="list">{results.map(row)}</div>}
+        </div>
+      ) : (
+        <>
+          {recents.length > 0 && (
+            <div className="stack" style={{ gap: 8 }}>
+              <SectionHeader title="Recently viewed" />
+              <div className="list">{recents.map(row)}</div>
             </div>
-          );
-        })}
+          )}
+          {favs.length > 0 && (
+            <div className="stack" style={{ gap: 8 }}>
+              <SectionHeader title="Favourites" />
+              <div className="list">{favs.map(row)}</div>
+            </div>
+          )}
+          <div className="stack" style={{ gap: 8 }}>
+            <SectionHeader title="Browse by group" />
+            <div className="dua-cats">
+              {DUA_BROWSE.map((c) => (
+                <button key={c.id} className="tile dua-cat" onClick={() => setSel(`category/${c.id}`)}>
+                  <span className="art-chip" style={{ background: "var(--c-dua-bg)", width: 56, height: 56, borderRadius: 18 }} aria-hidden="true">
+                    <Art name={c.art} size={40} />
+                  </span>
+                  <span className="strong">{c.label}</span>
+                  <span className="tiny faint">{c.blurb}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
 // ---------------- Surah learning ----------------
 
 /** Surah learning. On the website the open surah follows the URL (/surahs/al-ikhlaas). */

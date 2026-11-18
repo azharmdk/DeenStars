@@ -82,6 +82,10 @@ export interface Dua {
   audio?: AudioRef | null;
   quranRef?: string | null;
   highlightFromWord?: number | null;
+  /** Short version shown by default when present (the long narration is hidden). */
+  concise?: { arabic: string; translation: string } | null;
+  /** Shown in an expandable section, for example what to say if you forgot at the start. */
+  ifForgotten?: { label: string; arabic: string; translation: string } | null;
   source: { type: string; work?: string; itemId?: number; surahName?: string; surahNumber?: number; ayahStart?: number; translationSource?: string; transliterationSource?: string; hadithReferenceStatus?: string };
   reviewStatus: string;
   sortOrder: number;

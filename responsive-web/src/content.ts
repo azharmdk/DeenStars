@@ -66,3 +66,21 @@ export function quranOrder(a: string, b: string): number {
   const [sb, ab] = b.split(":").map(Number);
   return sa - sb || aa - ab;
 }
+/** Dua Corner landing categories. Existing library categories map onto them; empty ones show a calm "coming soon". */
+export interface DuaBrowseCategory {
+  id: string;
+  label: string;
+  blurb: string;
+  art: "sunrise" | "night" | "house" | "plate" | "camel" | "bed" | "palms-up";
+  /** Library categories (Dua["category"]) that belong here. */
+  from: string[];
+}
+export const DUA_BROWSE: DuaBrowseCategory[] = [
+  { id: "morning", label: "Morning Duas", blurb: "Start the day", art: "sunrise", from: ["wake"] },
+  { id: "evening", label: "Evening Duas", blurb: "End the day", art: "night", from: [] },
+  { id: "daily-life", label: "Daily Life Duas", blurb: "Home and every day", art: "house", from: ["home", "bathroom"] },
+  { id: "food-drink", label: "Food & Drink Duas", blurb: "Before and after eating", art: "plate", from: ["eating"] },
+  { id: "travel", label: "Travel Duas", blurb: "Going out and journeys", art: "camel", from: [] },
+  { id: "sleep", label: "Sleep Duas", blurb: "Bedtime", art: "bed", from: ["sleep"] },
+  { id: "quran", label: "Duas from the Quran", blurb: "Words from the Quran", art: "palms-up", from: ["rabbana"] },
+];

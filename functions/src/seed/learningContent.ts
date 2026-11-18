@@ -1,11 +1,12 @@
-/**
+﻿/**
  * Builds Dua Corner, Surah learning, stories and bedtime documents from the imported source packs
- * (scripts/import-content.mjs, docs/ISLAMIC_CONTENT_POLICY.md §11). Arabic text and audio come only
+ * (scripts/import-content.mjs, docs/ISLAMIC_CONTENT_POLICY.md Â§11). Arabic text and audio come only
  * from the packs; nothing here is typed by hand.
  * Every item is "pendingReview" until a qualified reviewer approves it.
  */
 import quran from "./packs/quran.json";
 import duas from "./packs/duas.json";
+import duaOverrides from "./packs/dua-overrides.json";
 import surahs from "./packs/surahs.json";
 import stories from "./packs/stories.json";
 
@@ -23,6 +24,8 @@ function ayah(ref: string) {
 // Word index where the dua part starts inside a longer verse (from the imported text, see import notes).
 const QURAN_DUA_HIGHLIGHT: Record<string, number> = { "2:201": 3, "7:23": 1, "17:24": 7, "20:114": 14 };
 
+const DUA_OVERRIDES = duaOverrides as unknown as Record<string, object>;
+
 export function buildDuaLibrary() {
   return duas.map((d, i) => {
     const ref = d.source.type === "quran" ? `${(d.source as { surahNumber: number }).surahNumber}:${(d.source as { ayahStart: number }).ayahStart}` : null;
@@ -30,6 +33,7 @@ export function buildDuaLibrary() {
       id: d.duaId,
       data: {
         ...d,
+        ...(DUA_OVERRIDES[d.duaId] ?? {}),
         transliteration: (d as { transliteration?: string }).transliteration ?? null,
         quranRef: ref,
         highlightFromWord: ref ? QURAN_DUA_HIGHLIGHT[ref] ?? 0 : null,

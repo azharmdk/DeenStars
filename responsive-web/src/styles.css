@@ -992,6 +992,34 @@ a.printable-title:hover { color: var(--primary); text-decoration: underline; }
 }
 .install-text { flex: 1; }
 
+/* Dua Corner landing */
+.search-box { position: relative; display: flex; align-items: center; }
+.search-box svg { position: absolute; left: 12px; color: var(--ink-3); pointer-events: none; }
+.search-box .input { padding-left: 40px; width: 100%; }
+.dua-cats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+@media (min-width: 768px) { .dua-cats { grid-template-columns: repeat(3, 1fr); } }
+.dua-cat { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 6px; text-align: left; min-height: 60px; }
+.dua-more > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+
+/* Play & Learn: Find the Mosque, daily challenge */
+.mosque-map { display: grid; gap: var(--space-3); width: 100%; max-width: 480px; margin-inline: auto; padding: var(--space-3); border-radius: var(--radius-lg); background: var(--primary-soft); }
+.mosque-spot { display: flex; align-items: center; justify-content: center; min-height: 80px; aspect-ratio: 1 / 1; border-radius: var(--radius-lg); border: 2px solid var(--border); background: var(--surface); cursor: pointer; transition: transform 0.15s ease, opacity 0.2s ease; }
+.mosque-spot:active { transform: scale(0.97); }
+.mosque-spot.faded { opacity: 0.35; cursor: default; }
+.mosque-spot.hint { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: ds-glow 1.4s ease-in-out infinite; }
+.mosque-spot.found { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 4px var(--primary-soft); }
+.mosque-spot:disabled { cursor: default; }
+@keyframes ds-glow { 50% { box-shadow: 0 0 0 8px var(--accent-soft); } }
+.stars-row { display: flex; gap: 6px; justify-content: center; color: var(--c-salah, #c98a12); margin: 0; }
+.streak-chip { display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.28); font-weight: 800; font-size: 13px; width: fit-content; }
+.challenge-archive > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.challenge-archive ul { list-style: none; padding: 0; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .mosque-spot { transition: none; } .mosque-spot.hint { animation: none; } }
+
+
+.level-picker { flex-wrap: wrap; }
+.level-picker button { flex: 1 1 30%; white-space: nowrap; }
+
 /* Sponsor banners (Enhancement 5): plain static images, clearly labelled, parent area only. No motion. */
 .sponsors { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
 .sponsor-banner {

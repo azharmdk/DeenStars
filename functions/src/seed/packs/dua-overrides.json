@@ -1,0 +1,15 @@
+{
+  "_note": "Concise display texts supplied by the project owner on 2026-05 and treated as reviewer-approved by the owner's decision. Not typed by AI. A named reviewer must still be recorded before publish. Keyed by duaId; merged over the imported Hisn al-Muslim item by buildDuaLibrary.",
+  "dua_before_eating": {
+    "concise": {
+      "arabic": "بِسْمِ اللهِ",
+      "translation": "In the name of Allah."
+    },
+    "ifForgotten": {
+      "label": "If you forget at the start",
+      "arabic": "بِسْمِ اللهِ أَوَّلَهُ وَآخِرَهُ",
+      "translation": "In the name of Allah, at its beginning and its end."
+    },
+    "conciseProvenance": "owner-supplied"
+  }
+}

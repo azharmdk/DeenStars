@@ -8,7 +8,7 @@ import { PRIVACY_ITEMS } from "./Onboarding";
 
 /** Public pages. Learning pages work without an account; progress needs a free parent account. */
 export const SITE_LINKS: { to: string; label: string }[] = [
-  { to: "/duas", label: "Duas" },
+  { to: "/duas", label: "Dua Corner" },
   { to: "/surahs", label: "Surahs" },
   { to: "/stories", label: "Stories" },
   { to: "/bedtime", label: "Bedtime" },

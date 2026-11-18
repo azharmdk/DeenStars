@@ -59,8 +59,10 @@ function isContentPath(path: string): boolean {
 /** Signed-out website. Learning pages are open to everyone; an account is needed to save progress. */
 function PublicSite({ path, signedIn }: { path: string; signedIn: boolean }) {
   const parts = path.replace(/\/+$/, "").split("/").filter(Boolean);
-  const [first, second] = parts;
-  const item = second ? decodeURIComponent(second) : undefined;
+  const [first] = parts;
+  // Everything after the section is the item, so "/duas/category/morning" gives "category/morning".
+  const rest = parts.slice(1).map(decodeURIComponent).join("/");
+  const item = rest || undefined;
   if (!signedIn && (first === "signin" || first === "register")) {
     return (
       <SiteFrame>

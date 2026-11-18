@@ -33,7 +33,7 @@ Every dua, surah, story and printable has its own link, so shares from Instagram
 | URL | Page |
 |---|---|
 | `/` | Home page |
-| `/duas`, `/duas/<name>` | Dua Corner, one dua (for example `/duas/before-sleeping`) |
+| `/duas`, `/duas/category/<group>`, `/duas/<name>` | Dua Corner landing (groups, search, favourites, recently viewed), one group (for example `/duas/category/morning`), one dua (for example `/duas/before-sleeping`) |
 | `/surahs`, `/surahs/<name>` | Short Surahs, one surah (for example `/surahs/al-ikhlaas`) |
 | `/stories`, `/stories/<id>` | Story library, one story |
 | `/bedtime` | Bedtime |
