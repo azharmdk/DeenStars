@@ -1,0 +1,16 @@
+{
+  "name": "DeenStars (Prototype)",
+  "short_name": "DeenStars",
+  "description": "Little Steps. Beautiful Habits. Brighter Hearts.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#E3F4EA",
+  "theme_color": "#0E5C4F",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

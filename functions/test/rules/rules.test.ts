@@ -38,6 +38,12 @@ beforeEach(async () => {
     await setDoc(doc(db, "parents/parentA/notifications/n1"), { title: "t", readAt: null });
     await setDoc(doc(db, "activities/a1"), { status: "approved" });
     await setDoc(doc(db, "appConfiguration/rewards"), { configVersion: 1 });
+    await setDoc(doc(db, "appConfiguration/bedtime"), { duaIds: [] });
+    await setDoc(doc(db, "appConfiguration/hijri"), { defaultAdjust: 0 });
+    await setDoc(doc(db, "duaLibrary/d1"), { title: "t" });
+    await setDoc(doc(db, "surahLibrary/s1"), { title: "t" });
+    await setDoc(doc(db, "stories/st1"), { title: "t" });
+    await setDoc(doc(db, "quizzes/q1"), { title: "t" });
     await setDoc(doc(db, "contentDrafts/d1"), { status: "draft" });
     await setDoc(doc(db, "auditLog/e1"), { action: "x" });
   });
@@ -60,6 +66,21 @@ describe("children data", () => {
   it("signed-out users cannot read", async () => {
     const db = env.unauthenticatedContext().firestore();
     await assertFails(getDoc(doc(db, "children/childA")));
+  });
+
+  it("owner can read the day streak and badges but never write them (Fix 3.2)", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "children/childA/progress/summary"), { dayStreak: { current: 3 } });
+      await setDoc(doc(ctx.firestore(), "children/childA/badges/streak_3"), { badgeId: "streak_3" });
+    });
+    const db = env.authenticatedContext("parentA").firestore();
+    await assertSucceeds(getDoc(doc(db, "children/childA/progress/summary")));
+    await assertSucceeds(getDoc(doc(db, "children/childA/badges/streak_3")));
+    await assertFails(setDoc(doc(db, "children/childA/progress/summary"), { dayStreak: { current: 99 } }));
+    await assertFails(setDoc(doc(db, "children/childA/badges/kindness_week"), { badgeId: "kindness_week" }));
+    await assertFails(deleteDoc(doc(db, "children/childA/badges/streak_3")));
+    const other = env.authenticatedContext("parentB").firestore();
+    await assertFails(getDoc(doc(other, "children/childA/badges/streak_3")));
   });
 
   it("owner cannot write stars, approvals or the child doc", async () => {
@@ -107,9 +128,49 @@ describe("content and admin collections", () => {
     await assertFails(updateDoc(doc(db, "appConfiguration/rewards"), { configVersion: 2 }));
   });
 
-  it("signed-out users cannot read content", async () => {
+  it("signed-out users cannot read activities, quizzes or other config", async () => {
     const db = env.unauthenticatedContext().firestore();
     await assertFails(getDoc(doc(db, "activities/a1")));
+    await assertFails(getDoc(doc(db, "quizzes/q1")));
+    await assertFails(getDoc(doc(db, "appConfiguration/rewards")));
+    await assertFails(getDoc(doc(db, "appConfiguration/hijri")));
+  });
+
+  it("signed-out users (website guests) can read the learning library and bedtime config", async () => {
+    const db = env.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(db, "duaLibrary/d1")));
+    await assertSucceeds(getDoc(doc(db, "surahLibrary/s1")));
+    await assertSucceeds(getDoc(doc(db, "stories/st1")));
+    await assertSucceeds(getDoc(doc(db, "appConfiguration/bedtime")));
+  });
+
+  it("nobody can write the learning library, signed in or not", async () => {
+    for (const db of [env.unauthenticatedContext().firestore(), env.authenticatedContext("parentA").firestore()]) {
+      await assertFails(setDoc(doc(db, "duaLibrary/d2"), { title: "x" }));
+      await assertFails(updateDoc(doc(db, "surahLibrary/s1"), { title: "x" }));
+      await assertFails(deleteDoc(doc(db, "stories/st1")));
+      await assertFails(setDoc(doc(db, "appConfiguration/bedtime"), { duaIds: ["x"] }));
+    }
+  });
+
+  it("sponsors: signed-in parents read, guests cannot, nobody writes (Enhancement 5)", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "sponsors/acme"), { brandName: "Acme" });
+    });
+    await assertSucceeds(getDoc(doc(env.authenticatedContext("parentA").firestore(), "sponsors/acme")));
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "sponsors/acme")));
+    for (const db of [env.unauthenticatedContext().firestore(), env.authenticatedContext("parentA").firestore()]) {
+      await assertFails(setDoc(doc(db, "sponsors/evil"), { brandName: "Evil", linkUrl: "https://evil.example" }));
+      await assertFails(updateDoc(doc(db, "sponsors/acme"), { linkUrl: "https://evil.example" }));
+      await assertFails(deleteDoc(doc(db, "sponsors/acme")));
+    }
+  });
+
+  it("signed-out users still cannot read children or parents", async () => {
+    const db = env.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(db, "children/childA")));
+    await assertFails(getDoc(doc(db, "children/childA/parentApprovals/p1")));
+    await assertFails(getDoc(doc(db, "parents/parentA")));
   });
 
   it("drafts, audit log and unknown collections are denied", async () => {

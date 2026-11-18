@@ -41,27 +41,53 @@ export function buildDuaLibrary() {
   });
 }
 
+/** Quran order for references like "11:40": by surah, then ayah. */
+export function compareRefs(a: string, b: string): number {
+  const [sa, aa] = a.split(":").map(Number);
+  const [sb, ab] = b.split(":").map(Number);
+  return sa - sb || aa - ab;
+}
+
+/**
+ * The Tanzil text puts the Bismillah in front of ayah 1 of each surah except Al-Fatiha (where it is ayah 1)
+ * and At-Tawbah (which has none). It is shown on its own line, using the Al-Fatiha 1:1 text, transliteration
+ * and translation from the same sources. Nothing is retyped: the ayah keeps the rest of the imported text.
+ */
+export function splitBismillah(surahNumber: number, arabic: string): { bismillah: boolean; arabic: string } {
+  const b = ayah("1:1").arabic;
+  if (surahNumber === 1 || surahNumber === 9 || !arabic.startsWith(b)) return { bismillah: false, arabic };
+  return { bismillah: true, arabic: arabic.slice(b.length).trim() };
+}
+
 export function buildSurahLibrary() {
-  return surahs.map((s, i) => ({
+  return surahs.map((s, i) => {
+    let hasBismillah = false;
+    const ayahs = s.ayahRefs.map((ref) => {
+      const a = ayah(ref);
+      const split = a.ayahNumber === 1 ? splitBismillah(s.surahNumber, a.arabic) : { bismillah: false, arabic: a.arabic };
+      if (split.bismillah) hasBismillah = true;
+      return { ref, ayahNumber: a.ayahNumber, arabic: split.arabic, translation: a.translation, transliteration: a.transliteration, audio: (a as { audio?: unknown }).audio ?? null };
+    });
+    const b = ayah("1:1");
+    return {
     id: s.surahId,
     data: {
       ...s,
-      ayahs: s.ayahRefs.map((ref) => {
-        const a = ayah(ref);
-        return { ref, ayahNumber: a.ayahNumber, arabic: a.arabic, translation: a.translation, transliteration: a.transliteration, audio: (a as { audio?: unknown }).audio ?? null };
-      }),
-      source: { type: "quran", arabicEdition: "Tanzil Project, Uthmani", translationSource: "Pickthall (1930), public domain" },
+      ayahs,
+      bismillah: hasBismillah ? { arabic: b.arabic, transliteration: b.transliteration, translation: b.translation } : null,
+      source: { type: "quran", arabicEdition: "Tanzil Project, Uthmani", translationSource: b.source.translationSource },
       ageGroups: ["3-4", "5", "6"],
       sortOrder: i,
       ...REVIEW,
     },
-  }));
+    };
+  });
 }
 
 export function buildStories() {
   return stories.map((s, i) => {
     const v = ayah(s.verse.ref);
-    const refs = Array.from(new Set(s.scenes.flatMap((sc) => sc.refs)));
+    const refs = Array.from(new Set(s.scenes.flatMap((sc) => sc.refs))).sort(compareRefs);
     return {
       id: s.storyId,
       data: {
@@ -74,8 +100,11 @@ export function buildStories() {
           arabic: v.arabic,
           translation: v.translation,
           transliteration: v.transliteration,
+          translationSource: v.source.translationSource,
           audio: (v as { audio?: unknown }).audio ?? null,
         },
+        // Quran order for the "Read the verses" panel (map key order is not kept by Firestore).
+        refOrder: refs,
         refVerses: Object.fromEntries(
           refs.map((r) => {
             const a = ayah(r);

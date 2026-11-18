@@ -150,3 +150,28 @@ export function buildDevActivities() {
     },
   }));
 }
+
+/**
+ * Badge rules (Fix 3.2). Server reads these to award badges; the app reads them to show earned and
+ * upcoming badges. Positive only: badges are never taken away.
+ */
+export const devBadgesConfig = {
+  configVersion: 1,
+  badges: [
+    { id: "stars_10", type: "totalStars", threshold: 10, title: "First 10 stars", description: "You earned 10 stars", art: "star", sortOrder: 1 },
+    { id: "streak_3", type: "dayStreak", days: 3, title: "3 days in a row", description: "A good deed 3 days in a row", art: "calendar", sortOrder: 2 },
+    { id: "stars_50", type: "totalStars", threshold: 50, title: "First 50 stars", description: "You earned 50 stars", art: "medal", sortOrder: 3 },
+    { id: "streak_7", type: "dayStreak", days: 7, title: "A whole week", description: "A good deed every day for 7 days", art: "rainbow", sortOrder: 4 },
+    { id: "kindness_week", type: "categoryRun", category: "goodDeed", days: 7, title: "Kindness Week", description: "A good deed every day for 7 days", art: "sparkling-heart", sortOrder: 5 },
+    { id: "stars_100", type: "totalStars", threshold: 100, title: "First 100 stars", description: "You earned 100 stars", art: "trophy", sortOrder: 6 },
+  ],
+};
+/**
+ * Sponsor banners (Enhancement 5). Banners themselves are documents in `sponsors/{id}`, added by an
+ * admin after review. This config only switches the feature and sets the disclosure text.
+ */
+export const devSponsorsConfig = {
+  enabled: true,
+  maxBanners: 2,
+  disclosure: "Sponsored banners are paid placements from companies we choose. They appear only in the grown-ups area, never to children. Sponsors never get your or your child's details.",
+};

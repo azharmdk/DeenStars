@@ -20,6 +20,8 @@ const writes = [
   ["appConfiguration/ramadan", dev.devRamadanConfig],
   ["appConfiguration/themes", { themes: dev.devThemes, rotation: "isoWeek" }],
   ["appConfiguration/bedtime", learn.buildBedtimeConfig()],
+  ["appConfiguration/badges", dev.devBadgesConfig],
+  ["appConfiguration/sponsors", dev.devSponsorsConfig],
   ...dev.buildDevActivities().map((a) => [`activities/${a.id}`, a.data]),
   ...learn.buildDuaLibrary().map((d) => [`duaLibrary/${d.id}`, d.data]),
   ...learn.buildSurahLibrary().map((s) => [`surahLibrary/${s.id}`, s.data]),

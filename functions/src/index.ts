@@ -6,6 +6,7 @@ export {
   makeUpActivity,
   recordTogether,
   onCompletionWritten,
+  onStarAwarded,
   expireApprovals,
 } from "./checklist";
 export { updateLearningProgress, updateParentSettings } from "./learning";

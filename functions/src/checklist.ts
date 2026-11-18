@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { DocumentData, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
 import { callableOptions, db, DEV_ALLOW_JUMMAH_ANY_DAY, DEV_ALLOW_SEASONAL_ANY_DAY, REGION } from "./lib/env";
@@ -9,6 +9,7 @@ import { hijriSettingsForChild } from "./learning";
 import { ChildDoc, loadOwnedChild, parseInput, requireAuth, requireParentSession } from "./lib/guards";
 import { applyStarAward, loadRewardsConfig, RewardRule } from "./lib/rewards";
 import { recomputeStreak } from "./lib/streaks";
+import { recomputeProgress } from "./lib/progress";
 import { addDays, approvalExpiresAt, dayKeyFor, isFridayDayKey } from "./lib/time";
 
 const id = z.string().min(1).max(100);
@@ -283,6 +284,14 @@ export const onCompletionWritten = onDocumentWritten(
     const activityId = (after?.activityId ?? before?.activityId) as string | undefined;
     if (!activityId || after?.status === before?.status) return;
     await recomputeStreak(event.params.childId, activityId);
+  },
+);
+
+/** Day streak and badges are recomputed from the ledger whenever stars are awarded (Fix 3.2). */
+export const onStarAwarded = onDocumentCreated(
+  { document: "children/{childId}/starTransactions/{txnId}", region: REGION, maxInstances: 5 },
+  async (event) => {
+    await recomputeProgress(event.params.childId);
   },
 );
 

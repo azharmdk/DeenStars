@@ -1,11 +1,14 @@
 // Imports religious source content by reference (never typed by hand). See docs/ISLAMIC_CONTENT_POLICY.md §11.
-// - Quran: Tanzil Uthmani text, Pickthall translation (public domain), transliteration, Husary audio (AlQuran Cloud).
+// - Quran: Tanzil Uthmani text, transliteration and Husary audio (AlQuran Cloud).
+// - Translation: Talal Itani, ClearQuran Allah Edition (CC BY-ND 4.0, commercial use allowed, wording unchanged,
+//   credit "Translation by Talal Itani, ClearQuran.com"). Read from the plain-text file published at clearquran.com/download.
 // - Surah learning: whole-surah recitation by al-Husayni al-Azazi with children.
-// - Duas: Hisn al-Muslim (hisnmuslim.com API), Arabic, English meaning, human audio.
+// - Duas: Hisn al-Muslim (hisnmuslim.com API), Arabic, transliteration, English meaning, human audio.
 // Writes JSON packs to functions/src/seed/packs and audio files to web/public/audio.
 // Usage: node scripts/import-content.mjs
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
+import { inflateRawSync } from "node:zlib";
 
 const PACKS = "functions/src/seed/packs";
 const AUDIO = "web/public/audio";
@@ -36,6 +39,61 @@ async function download(url, path) {
 
 const webPath = (p) => p.replace(/^web\/public/, "");
 
+// ---------- Translation: ClearQuran (Talal Itani), Allah Edition ----------
+const ITANI_ZIP = "https://d.clearquran.com/text/clearquran-txt-allah-edition.zip";
+const ITANI_FILE = "clearquran-allah-edition.txt";
+const ITANI_SOURCE = "Talal Itani, ClearQuran.com (Allah Edition), CC BY-ND 4.0";
+
+/** Minimal ZIP reader: returns one stored or deflated file from an archive buffer. */
+function unzipFile(buf, name) {
+  let eocd = buf.length - 22;
+  while (eocd >= 0 && buf.readUInt32LE(eocd) !== 0x06054b50) eocd--;
+  if (eocd < 0) throw new Error("zip: end record not found");
+  const count = buf.readUInt16LE(eocd + 10);
+  let p = buf.readUInt32LE(eocd + 16);
+  for (let i = 0; i < count; i++) {
+    const method = buf.readUInt16LE(p + 10);
+    const size = buf.readUInt32LE(p + 20);
+    const nameLen = buf.readUInt16LE(p + 28);
+    const extraLen = buf.readUInt16LE(p + 30);
+    const commentLen = buf.readUInt16LE(p + 32);
+    const local = buf.readUInt32LE(p + 42);
+    const entry = buf.toString("utf8", p + 46, p + 46 + nameLen);
+    if (entry.split("/").pop() === name) {
+      const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+      const data = buf.subarray(start, start + size);
+      return method === 0 ? data : inflateRawSync(data);
+    }
+    p += 46 + nameLen + extraLen + commentLen;
+  }
+  throw new Error(`zip: ${name} not found`);
+}
+
+async function loadItani() {
+  const res = await fetch(ITANI_ZIP);
+  if (!res.ok) throw new Error(`fetch failed: ${ITANI_ZIP}`);
+  const text = unzipFile(Buffer.from(await res.arrayBuffer()), ITANI_FILE).toString("utf8").replace(/^\uFEFF/, "");
+  const map = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^(\d+)\|(\d+)\|(.*)$/);
+    if (m) map.set(`${m[1]}:${m[2]}`, m[3].trim());
+  }
+  if (map.size !== 6236) throw new Error(`ClearQuran: expected 6236 verses, got ${map.size}`);
+  return map;
+}
+const ITANI = await loadItani();
+
+// Transliteration exceptions. api.alquran.cloud en.transliteration repeats a phrase in 21:87
+// ("...fazaanna al lan naqdira alaihi fanaanna al lan naqdira alaihi..."), which is not in the Arabic.
+// For listed verses the transliteration is taken word by word from Quran.com instead (aligned to the Arabic words).
+const TRANSLIT_FROM_QURAN_COM = new Set(["21:87"]);
+async function quranComTransliteration(ref) {
+  const data = await json(`https://api.quran.com/api/v4/verses/by_key/${ref}?words=true&word_fields=transliteration`);
+  const words = data.verse.words.filter((w) => w.char_type_name === "word").map((w) => w.transliteration?.text).filter(Boolean);
+  if (words.length === 0) throw new Error(`no Quran.com transliteration for ${ref}`);
+  return words.join(" ");
+}
+
 // ---------- Quran ----------
 const SURAHS = [1, 103, 108, 112, 113, 114];
 const EXTRA_AYAHS = [
@@ -57,10 +115,14 @@ const STORY_REFS = {
 };
 
 async function ayah(ref, withAudio) {
-  const editions = ["quran-uthmani", "en.pickthall", "en.transliteration", "ar.husary"].join(",");
+  const editions = ["quran-uthmani", "en.transliteration", "ar.husary"].join(",");
   const data = (await json(`https://api.alquran.cloud/v1/ayah/${ref}/editions/${editions}`)).data;
   const by = Object.fromEntries(data.map((e) => [e.edition.identifier, e]));
   const u = by["quran-uthmani"];
+  const translation = ITANI.get(ref);
+  if (!translation) throw new Error(`ClearQuran has no verse ${ref}`);
+  const fromQuranCom = TRANSLIT_FROM_QURAN_COM.has(ref);
+  const transliteration = fromQuranCom ? await quranComTransliteration(ref) : by["en.transliteration"].text;
   const out = {
     ref,
     surahNumber: u.surah.number,
@@ -68,14 +130,15 @@ async function ayah(ref, withAudio) {
     surahNameArabic: u.surah.name,
     ayahNumber: u.numberInSurah,
     globalNumber: u.number,
-    arabic: u.text,
-    translation: by["en.pickthall"].text,
-    transliteration: by["en.transliteration"].text,
+    // Strip a stray byte-order mark that the source puts in front of 1:1. The words are unchanged.
+    arabic: u.text.replace(/^\uFEFF/, ""),
+    translation,
+    transliteration,
     source: {
       type: "quran",
       arabicEdition: "Tanzil Project, Uthmani (quran-uthmani via api.alquran.cloud)",
-      translationSource: "Marmaduke Pickthall, The Meaning of the Glorious Koran (1930), public domain",
-      transliterationSource: "api.alquran.cloud en.transliteration",
+      translationSource: ITANI_SOURCE,
+      transliterationSource: fromQuranCom ? "Quran.com word-by-word transliteration (api.quran.com)" : "api.alquran.cloud en.transliteration",
     },
   };
   if (withAudio) {
@@ -158,6 +221,8 @@ for (const d of HISN) {
     title: chapter.TITLE.replace(/^\w/, (c) => c.toUpperCase()),
     arabic: item.ARABIC_TEXT.trim(),
     translation: item.TRANSLATED_TEXT.trim(),
+    // Romanised text from the same Hisn al-Muslim item (LANGUAGE_ARABIC_TRANSLATED_TEXT). Empty for some items.
+    transliteration: item.LANGUAGE_ARABIC_TRANSLATED_TEXT?.trim() || null,
     whenToRecite: d.when,
     repeat: item.REPEAT ?? 1,
     audio: { path: webPath(path), reciter: "Hisn al-Muslim audio (hisnmuslim.com)", origin: item.AUDIO },
@@ -169,6 +234,7 @@ for (const d of HISN) {
       itemId: item.ID,
       hadithReference: null,
       hadithReferenceStatus: "to be added by reviewer from Sunnah.com",
+      transliterationSource: "hisnmuslim.com (Hisn al-Muslim English edition)",
     },
   });
 }
@@ -207,9 +273,10 @@ writeFileSync(
     "# Source attribution for imported content",
     "",
     "- Quran text: Tanzil Quran Text, Copyright (C) 2007-2021 Tanzil Project, License: Creative Commons Attribution 3.0. https://tanzil.net. Verbatim, not changed.",
-    "- Translation: Marmaduke Pickthall, The Meaning of the Glorious Koran (1930), public domain.",
+    "- Quran translation: Translation by Talal Itani, ClearQuran.com (Allah Edition). CC BY-ND 4.0 with the author's added permission for commercial use, reformatting and quoting selected verses. Wording unchanged. https://clearquran.com/download/",
+    "- Transliteration exception: 21:87 from Quran.com word-by-word transliteration (api.quran.com), because the alquran.cloud text repeats a phrase.",
     "- Transliteration and recitation index: api.alquran.cloud. Recitation by Sheikh Mahmoud Khalil al-Husary and Sheikh al-Husayni al-Azazi with children (cdn.islamic.network).",
-    "- Duas: Hisn al-Muslim by Sa'id ibn Ali ibn Wahf al-Qahtani, via hisnmuslim.com.",
+    "- Duas: Hisn al-Muslim by Sa'id ibn Ali ibn Wahf al-Qahtani, via hisnmuslim.com (Arabic, transliteration, English meaning, audio).",
     "",
     `Imported: ${new Date().toISOString()}`,
   ].join("\n"),

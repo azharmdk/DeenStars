@@ -50,8 +50,10 @@ service cloud.firestore {
 
     // ---- Published content: read-only for signed-in users ----
     match /activities/{id}        { allow read: if signedIn(); allow write: if false; }
-    match /duaLibrary/{id}        { allow read: if signedIn(); allow write: if false; }
-    match /surahLibrary/{id}      { allow read: if signedIn(); allow write: if false; }
+    // Learning library: public read so the website works without an account (guest mode).
+    // Holds published duas, surahs and stories only. No personal data.
+    match /duaLibrary/{id}        { allow read: if true; allow write: if false; }
+    match /surahLibrary/{id}      { allow read: if true; allow write: if false; }
     match /quizzes/{id}           { allow read: if signedIn(); allow write: if false; }
     match /quizQuestions/{id}     { allow read: if signedIn(); allow write: if false; }
     match /games/{id}             { allow read: if signedIn(); allow write: if false; }
@@ -60,8 +62,12 @@ service cloud.firestore {
     match /achievements/{id}      { allow read: if signedIn(); allow write: if false; }
     match /weeklyChallenges/{id}  { allow read: if signedIn(); allow write: if false; }
     match /badges/{id}            { allow read: if signedIn(); allow write: if false; }
-    match /appConfiguration/{id}  { allow read: if signedIn(); allow write: if false; }
-    match /stories/{id}           { allow read: if signedIn(); allow write: if false; }
+    // Only the bedtime playlist is public (guest Bedtime). Rewards and other config stay signed-in only.
+    match /appConfiguration/{id}  { allow read: if signedIn() || id == "bedtime"; allow write: if false; }
+    match /stories/{id}           { allow read: if true; allow write: if false; }
+    // Sponsor banners: a small curated list (name, image, link), shown in the parent area only.
+    // Admin-written. Signed-in parents can read it; website guests cannot.
+    match /sponsors/{id}          { allow read: if signedIn(); allow write: if false; }
 
     // ---- Leaderboards: anonymous snapshot rows, read-only ----
     match /leaderboards/{boardId} {

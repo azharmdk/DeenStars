@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { callableOptions, db, DEV_SEED_ENABLED } from "./lib/env";
-import { buildDevActivities, devHijriConfig, devRamadanConfig, devRewardsConfig, devThemes } from "./seed/devContent";
+import { buildDevActivities, devBadgesConfig, devSponsorsConfig, devHijriConfig, devRamadanConfig, devRewardsConfig, devThemes } from "./seed/devContent";
 import { buildBedtimeConfig, buildDuaLibrary, buildStories, buildSurahLibrary } from "./seed/learningContent";
 
 /**
@@ -23,6 +23,8 @@ export const devSeedContent = onCall({ ...callableOptions, enforceAppCheck: fals
     ["appConfiguration/ramadan", devRamadanConfig],
     ["appConfiguration/themes", { themes: devThemes, rotation: "isoWeek" }],
     ["appConfiguration/bedtime", buildBedtimeConfig()],
+    ["appConfiguration/badges", devBadgesConfig],
+    ["appConfiguration/sponsors", devSponsorsConfig],
   ];
   for (const a of buildDevActivities()) writes.push([`activities/${a.id}`, a.data]);
   for (const d of buildDuaLibrary()) writes.push([`duaLibrary/${d.id}`, d.data]);

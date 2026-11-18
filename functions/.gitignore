@@ -1,3 +1,4 @@
 node_modules/
-lib/
+# Compiled output only. src/lib/ is source and must stay tracked.
+/lib/
 *.local
