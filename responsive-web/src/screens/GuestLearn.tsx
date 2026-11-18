@@ -80,15 +80,7 @@ export function GuestLearn({ section, item, signedIn = false }: { section: Secti
         <StoryLibrary child={child} onBack={home} onOpen={openStory} />
       </>
     );
-  else
-    body = (
-      <>
-        <div className="container-narrow">
-          <AgeBar age={age} onAge={setAge} />
-        </div>
-        <PlayTab key={age} child={child} />
-      </>
-    );
+  else body = <PlayTab child={child} />;
 
   return (
     <SiteFrame kids signedIn={signedIn}>

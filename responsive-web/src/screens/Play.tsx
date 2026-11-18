@@ -5,6 +5,12 @@ import { BackLink, Celebration } from "../components/common";
 import { Art, ArtName, Banner, PageTitle, SectionHeader, Tone } from "../components/ui";
 import { useProgressSummary } from "../data";
 import { safeStorage } from "../storage";
+import { dayKeyFor } from "../time";
+import { GAMES, gameInfo, GameId } from "../games/catalog";
+import { MOSQUE_LEVELS } from "../games/mosque";
+import { archiveDays, dailyGameFor, dailyStreak, mosqueUnlocked, playerLevel, totalCompleted } from "../games/progress";
+import { usePlayProgress } from "../games/usePlayProgress";
+import { FindTheMosque } from "./FindTheMosque";
 import {
   betterTime,
   Difficulty,
@@ -131,18 +137,31 @@ function LevelPicker<T extends string | number>(props: { label: string; value: T
   );
 }
 
-/** Game results show on the result screen itself; no overlay covers the heading or buttons (Fix 1.3). */
+const dayLabel = (day: string) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+
+/**
+ * Play & Learn. No age groups: players move up levels by finishing games.
+ * Today's Islamic Challenge features one game a day, with an archive of earlier days.
+ * Progress is kept on this device. Game results show on the result screen itself; no overlay covers
+ * the heading or buttons (Fix 1.3).
+ */
 export function PlayTab({ child }: { child: Child }) {
-  const [mode, setMode] = useState<"menu" | "quiz" | "match">("menu");
+  const [mode, setMode] = useState<"menu" | "quiz" | "match" | "mosque">("menu");
   const [quizFinished, setQuizFinished] = useState(() => readNum(quizKey(child)));
   const [matchFinished, setMatchFinished] = useState(() => readNum(matchKey(child)) ?? 0);
   const summary = useProgressSummary(child.id);
   const longest = summary?.longestDayRun ?? 0;
+  const { progress, record } = usePlayProgress(child);
+  const today = dayKeyFor(new Date(), child.timeZone);
+  // The day being played as a daily challenge, or null for normal play.
+  const [challengeDay, setChallengeDay] = useState<string | null>(null);
 
   const maxQuiz = unlockedQuizIndex(child.difficulty as Difficulty, quizFinished);
   const [quizLevel, setQuizLevel] = useState(() => Math.min(maxQuiz, unlockedQuizIndex(child.difficulty as Difficulty, null)));
   const matchOptions = MATCH_LEVELS.map((l) => ({ ...l, locked: !matchUnlocked(l, matchFinished, longest) }));
   const [matchLevel, setMatchLevel] = useState<number>(1);
+  const maxMosque = Math.min(MOSQUE_LEVELS.length - 1, progress.mosqueFinished + 1);
+  const [mosqueLevel, setMosqueLevel] = useState(0);
 
   // "New game unlocked" once, when the 7-day streak first unlocks Super Matching (Enhancement 6a.3).
   const [unlockCheer, setUnlockCheer] = useState(false);
@@ -153,16 +172,28 @@ export function PlayTab({ child }: { child: Child }) {
     setUnlockCheer(true);
   }, [child, longest]);
 
+  const done = (game: GameId, extra: { mosqueLevel?: number } = {}) => record(game, { ...extra, dailyDay: challengeDay ?? undefined, today });
+  const exit = () => {
+    setChallengeDay(null);
+    setMode("menu");
+  };
+  const modeFor = (g: GameId) => (g === "find-the-mosque" ? "mosque" : g === "kindness-quiz" ? "quiz" : "match");
+  const startChallenge = (day: string) => {
+    setChallengeDay(day);
+    setMode(modeFor(dailyGameFor(day)));
+  };
+
   if (mode === "quiz") {
     return (
       <Quiz
         key={quizLevel}
         level={quizLevel}
-        onExit={() => setMode("menu")}
+        onExit={exit}
         onFinished={(lvl) => {
           const best = Math.max(quizFinished ?? -1, lvl);
           safeStorage.setItem(quizKey(child), String(best));
           setQuizFinished(best);
+          done("kindness-quiz");
         }}
         maxUnlocked={maxQuiz}
         onNextLevel={() => setQuizLevel((l) => Math.min(QUIZ_LEVELS.length - 1, l + 1))}
@@ -176,20 +207,69 @@ export function PlayTab({ child }: { child: Child }) {
         key={lvl.level}
         child={child}
         level={lvl}
-        onExit={() => setMode("menu")}
+        onExit={exit}
         onFinished={() => {
           const best = Math.max(matchFinished, lvl.level);
           safeStorage.setItem(matchKey(child), String(best));
           setMatchFinished(best);
+          done("picture-matching");
         }}
+      />
+    );
+  }
+  if (mode === "mosque") {
+    return (
+      <FindTheMosque
+        key={mosqueLevel}
+        level={mosqueLevel}
+        unlocksNext={mosqueLevel === maxMosque && mosqueLevel < MOSQUE_LEVELS.length - 1}
+        onExit={exit}
+        onFinished={(l) => done("find-the-mosque", { mosqueLevel: l })}
+        onNextLevel={() => setMosqueLevel((l) => Math.min(MOSQUE_LEVELS.length - 1, l + 1))}
       />
     );
   }
 
   const q = QUIZ_LEVELS[quizLevel];
+  const pl = playerLevel(totalCompleted(progress));
+  const dailyId = dailyGameFor(today);
+  const dailyInfo = gameInfo(dailyId)!;
+  const doneToday = progress.daily[today] === "onTime";
+  const streak = dailyStreak(progress.daily, today);
+  const mosqueInfo = gameInfo("find-the-mosque")!;
   return (
     <div className="screen">
       <PageTitle title="Play & Learn" />
+      <div className="card stack player-level" style={{ gap: 6 }}>
+        <div className="row between">
+          <span className="strong">{pl.label}</span>
+          <span className="small faint">{pl.toNext === null ? "You reached Expert!" : `${pl.toNext} more ${pl.toNext === 1 ? "game" : "games"} to ${pl.nextLabel}`}</span>
+        </div>
+        <span className="progress" role="progressbar" aria-label="Level progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pl.fraction * 100)}>
+          <span style={{ display: "block", height: "100%", borderRadius: 999, background: "var(--primary)", width: `${pl.fraction * 100}%` }} />
+        </span>
+      </div>
+
+      <Banner
+        tone="gold"
+        art={dailyInfo.art}
+        wide
+        badge="Today's Islamic Challenge"
+        title={dailyInfo.title}
+        sub={doneToday ? "Done today. Well done! See you tomorrow." : dailyInfo.blurb}
+        onClick={() => startChallenge(today)}
+      >
+        {streak > 0 && <span className="streak-chip">{streak} {streak === 1 ? "day" : "days"} in a row</span>}
+      </Banner>
+
+      <SectionHeader title="Games" />
+      <Banner tone="teal" art={mosqueInfo.art} wide badge="Game" title="Find the Mosque" sub={`${MOSQUE_LEVELS[mosqueLevel].label} · ${MOSQUE_LEVELS[mosqueLevel].rounds} rounds`} onClick={() => setMode("mosque")} />
+      <LevelPicker
+        label="Find the Mosque level"
+        value={mosqueLevel}
+        onChange={setMosqueLevel}
+        options={MOSQUE_LEVELS.map((l) => ({ id: l.index, label: l.label, locked: !mosqueUnlocked(l.index, progress.mosqueFinished), hint: "Finish the level before to unlock" }))}
+      />
       <Banner tone="blue" art="question" wide badge="Quiz" title="Kindness Quiz" sub={`${q.label} · ${q.questions} questions`} onClick={() => setMode("quiz")} />
       <LevelPicker
         label="Quiz level"
@@ -210,17 +290,42 @@ export function PlayTab({ child }: { child: Child }) {
         }))}
       />
       {matchOptions[2].locked && <p className="small faint">Super Matching unlocks after {UNLOCK_STREAK_DAYS} days in a row of good deeds.</p>}
+
+      <details className="card challenge-archive">
+        <summary className="strong">Earlier challenges</summary>
+        <ul className="list" style={{ marginTop: 12 }}>
+          {archiveDays(today).map((day) => {
+            const g = gameInfo(dailyGameFor(day))!;
+            const finished = !!progress.daily[day];
+            return (
+              <li key={day}>
+                <button className="list-item" onClick={() => startChallenge(day)}>
+                  <Art name={g.art} size={36} />
+                  <span className="stack" style={{ gap: 2, flex: 1 }}>
+                    <span className="strong">{g.title}</span>
+                    <span className="small faint">{dayLabel(day)}</span>
+                  </span>
+                  {finished && <span className="status done">Done</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </details>
+
       <SectionHeader title="Coming soon" />
       <div className="grid2">
+        {GAMES.filter((g) => g.status === "soon").map((g) => (
+          <Banner key={g.id} tone={g.tone} art={g.art} title={g.title} locked />
+        ))}
         {SOON.map((g) => (
-          <Banner key={g.title} tone={g.tone} art={g.art} title={g.title} sub="Coming soon" locked />
+          <Banner key={g.title} tone={g.tone} art={g.art} title={g.title} locked />
         ))}
       </div>
       {unlockCheer && <Celebration text="New game unlocked: Super Matching!" onDone={endCheer} />}
     </div>
   );
 }
-
 function Quiz({ level, onExit, onFinished, maxUnlocked, onNextLevel }: { level: number; onExit: () => void; onFinished: (level: number) => void; maxUnlocked: number; onNextLevel: () => void }) {
   const lvl = QUIZ_LEVELS[level];
   const last = QUIZ_LEVELS.length - 1;
