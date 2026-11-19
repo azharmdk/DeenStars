@@ -35,8 +35,9 @@ Every dua, surah, story and printable has its own link, so shares from Instagram
 | `/` | Home page |
 | `/duas`, `/duas/category/<group>`, `/duas/<name>` | Dua Corner landing (groups, search, favourites, recently viewed), one group (for example `/duas/category/morning`), one dua (for example `/duas/before-sleeping`) |
 | `/surahs`, `/surahs/<name>` | Short Surahs, one surah (for example `/surahs/al-ikhlaas`) |
-| `/stories`, `/stories/<id>` | Story library, one story |
-| `/bedtime` | Bedtime |
+| `/stories`, `/stories/category/<group>`, `/stories/<id>` | Story groups (Prophets, Good Character, Islamic Values, Bedtime Stories, Ramadan, Hajj & Umrah), one group, one story |
+| `/stories/category/bedtime/routine` | Bedtime routine: a story, then bedtime duas, then goodnight |
+| `/bedtime` | Removed. Redirects to `/stories/category/bedtime` |
 | `/play` | Kindness Quiz and Picture Matching, with levels |
 | `/printables`, `/printables/<id>` | Free printables, one printable (for example `/printables/ramadan-countdown`) |
 | `/signin`, `/register` | Parent account |

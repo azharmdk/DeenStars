@@ -41,6 +41,10 @@ function Root() {
   useEffect(() => {
     if (user && (path.startsWith("/signin") || path.startsWith("/register"))) navigate("/", { replace: true });
   }, [user, path]);
+  // The old Bedtime page moved into Stories. Shared links to /bedtime still work.
+  useEffect(() => {
+    if (path === "/bedtime" || path.startsWith("/bedtime/")) navigate("/stories/category/bedtime", { replace: true });
+  }, [path]);
 
   if (!ready) return <Loading />;
   // A link from Instagram or WhatsApp opens its page for everyone, signed in or not.
@@ -48,7 +52,7 @@ function Root() {
   return <SignedIn uid={user.uid} key={user.uid} />;
 }
 
-const CONTENT_SECTIONS = ["duas", "surahs", "stories", "bedtime", "play", "printables"] as const;
+const CONTENT_SECTIONS = ["duas", "surahs", "stories", "play", "printables"] as const;
 type Section = (typeof CONTENT_SECTIONS)[number];
 
 function isContentPath(path: string): boolean {

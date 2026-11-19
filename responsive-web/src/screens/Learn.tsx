@@ -9,8 +9,8 @@ import { BackLink, Busy, Notice } from "../components/common";
 import { DUA_CATEGORY_ART } from "../components/icons";
 import { Art, Banner, SectionHeader } from "../components/ui";
 import { BedtimeScene, Scene } from "../components/scenes";
-import { DUA_BROWSE, duaSlug, quranOrder, storyPageCount, surahSlug } from "../content";
-import { AGE_BAND_LABEL, ageBandFor, Child, Dua, isGuest, LEARN_LABEL, LearnState, Story, Surah } from "../types";
+import { DUA_BROWSE, duaSlug, quranOrder, STORY_CATEGORIES, storiesIn, storyPageCount, surahSlug } from "../content";
+import { Child, Dua, isGuest, LEARN_LABEL, LearnState, Story, Surah } from "../types";
 
 
 
@@ -370,15 +370,24 @@ export function SurahLearning({ child, onBack, selected, onSelect }: { child: Ch
 
 // ---------------- Stories ----------------
 
-export function StoryLibrary({ child, onBack, onOpen }: { child: Child; onBack: () => void; onOpen: (s: Story) => void }) {
+export function StoryLibrary(props: {
+  child: Child;
+  onBack: () => void;
+  onOpen: (s: Story) => void;
+  /** "category/<id>" or null. On the website it follows the URL; in the signed-in app it keeps its own state. */
+  selected?: string | null;
+  onSelect?: (sel: string | null) => void;
+  /** Starts the bedtime routine (story, then bedtime duas). Shown on the Bedtime Stories page. */
+  onRoutine?: () => void;
+}) {
   const { items, error } = useLibrary<Story>("stories");
-  const band = ageBandFor(child);
-  // Young explorers can also enjoy the little learners' stories. Little learners see only theirs.
-  const mine = items?.filter((s) => s.ageBand === band) ?? [];
-  const more = band === "young" ? items?.filter((s) => s.ageBand === "little") ?? [] : [];
+  const [local, setLocal] = useState<string | null>(null);
+  const sel = props.onSelect ? props.selected ?? null : local;
+  const setSel = (s: string | null) => (props.onSelect ? props.onSelect(s) : setLocal(s));
+  const cat = STORY_CATEGORIES.find((c) => sel === `category/${c.id}`);
 
   const card = (s: Story) => (
-    <button key={s.id} className="tile" style={{ padding: 0, overflow: "hidden", gap: 0, minHeight: 0 }} onClick={() => onOpen(s)}>
+    <button key={s.id} className="tile" style={{ padding: 0, overflow: "hidden", gap: 0, minHeight: 0 }} onClick={() => props.onOpen(s)}>
       <Scene id={s.coverScene} />
       <span className="stack" style={{ gap: 2, padding: "10px 12px 12px" }}>
         <span>{s.title}</span>
@@ -387,24 +396,52 @@ export function StoryLibrary({ child, onBack, onOpen }: { child: Child; onBack: 
     </button>
   );
 
+  if (cat) {
+    const list = items ? storiesIn(items, cat.id) : [];
+    return (
+      <div className="screen">
+        <BackLink onClick={() => setSel(null)} label="Stories" />
+        <Banner tone={cat.id === "bedtime" ? "night" : "purple"} art={cat.art} wide title={cat.label} sub={cat.blurb} />
+        {cat.id === "bedtime" && props.onRoutine && (
+          <button className="btn btn-night btn-child" onClick={props.onRoutine}>
+            <MoonStar size={18} aria-hidden="true" /> Start bedtime routine
+          </button>
+        )}
+        {error && <Notice>We couldn't load the stories. Let's try again in a moment.</Notice>}
+        {!items && !error && <p className="muted">Loading…</p>}
+        {items && list.length === 0 && (
+          <div className="card stack" style={{ gap: 6, textAlign: "center" }}>
+            <strong>Coming soon</strong>
+            <p className="muted small">These stories are being checked by our reviewers before we share them. Please come back soon.</p>
+            <button className="btn btn-secondary" onClick={() => setSel(null)}>See all story groups</button>
+          </div>
+        )}
+        {list.length > 0 && <div className="grid2">{list.map(card)}</div>}
+      </div>
+    );
+  }
+
   return (
     <div className="screen">
-      <BackLink onClick={onBack} />
-      <Banner tone="purple" art="books" wide title="Stories" sub={`For ${AGE_BAND_LABEL[band]}`} />
-      <span className="muted small">A grown-up reads the story aloud, and the verse is recited by a qari.</span>
+      <BackLink onClick={props.onBack} />
+      <Banner tone="purple" art="books" wide title="Stories" sub="Pick a group" />
+      <p className="story-note" role="note">If you are younger, ask your mother or father to help you read.</p>
+      <span className="muted small">A grown-up can read the story aloud, and the verse is recited by a qari.</span>
       {error && <Notice>We couldn't load the stories. Let's try again in a moment.</Notice>}
-      {!items && !error && <p className="muted">Loading…</p>}
-      <div className="grid2">{mine.map(card)}</div>
-      {more.length > 0 && (
-        <>
-          <SectionHeader title="More stories" />
-          <div className="grid2">{more.map(card)}</div>
-        </>
-      )}
+      <div className="dua-cats">
+        {STORY_CATEGORIES.map((c) => (
+          <button key={c.id} className="tile dua-cat" onClick={() => setSel(`category/${c.id}`)}>
+            <span className="art-chip" style={{ background: "var(--c-quran-bg)", width: 56, height: 56, borderRadius: 18 }} aria-hidden="true">
+              <Art name={c.art} size={40} />
+            </span>
+            <span className="strong">{c.label}</span>
+            <span className="tiny faint">{c.blurb}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
-
 export function StoryReader({ story, onBack, night = false }: { story: Story; onBack: () => void; night?: boolean }) {
   const pages = storyPageCount(story);
   const [page, setPage] = useState(0);
@@ -510,8 +547,7 @@ export function Bedtime({ child, dayKey, onExit }: { child: Child; dayKey: strin
   const surahs = useLibrary<Surah>("surahLibrary").items;
   const queue = useAudioQueue();
 
-  const band = ageBandFor(child);
-  const pool = stories?.filter((s) => s.ageBand === band) ?? [];
+  const pool = stories ? storiesIn(stories, "bedtime") : [];
   const n = dayKey.split("-").reduce((a, b) => a + Number(b), 0);
   const tonight = pool.length ? pool[n % pool.length] : undefined;
 

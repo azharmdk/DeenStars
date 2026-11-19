@@ -20,7 +20,7 @@ import { PrintablesGrid } from "../components/Printables";
 import { FilterBar } from "../components/FilterBar";
 import { Scene } from "../components/scenes";
 import { Avatar, CATEGORY_STYLE, CategoryChip } from "../components/icons";
-import { Activity, ageBandFor, Category, Child, Completion, displayTitle, isStreakActive, Story, Streak, STREAK_CELEBRATIONS } from "../types";
+import { Activity, Category, Child, Completion, displayTitle, isStreakActive, Story, Streak, STREAK_CELEBRATIONS } from "../types";
 import { Season } from "../hijri";
 import { greetingForHour, isFridayDayKey } from "../time";
 import { PlayTab } from "./Play";
@@ -78,8 +78,8 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
   const daily = mine.filter((a) => (a.frequency ?? "daily") === "daily");
   const jummah = mine.filter((a) => a.frequency === "jummahOnly");
   const week = Number(weekKey.split("-W")[1]); // Friday story changes each ISO week
-  const bandStories = stories?.filter((s) => s.ageBand === ageBandFor(child)) ?? [];
-  const fridayStory = bandStories.length ? bandStories[week % bandStories.length] : undefined;
+  const allStories = stories ?? [];
+  const fridayStory = allStories.length ? allStories[week % allStories.length] : undefined;
   const openStory = (s: Story) => {
     setStory(s);
     setSub("story");
@@ -97,11 +97,11 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
   } else if (sub === "surahs") {
     body = <SurahLearning child={child} onBack={() => setSub(null)} />;
   } else if (sub === "stories") {
-    body = <StoryLibrary child={child} onBack={() => setSub(null)} onOpen={openStory} />;
+    body = <StoryLibrary child={child} onBack={() => setSub(null)} onOpen={openStory} onRoutine={() => setSub("bedtime")} />;
   } else if (sub === "story" && story) {
     body = <StoryReader story={story} onBack={() => setSub("stories")} />;
   } else if (sub === "bedtime") {
-    return <Bedtime child={child} dayKey={dayKey} onExit={() => setSub(null)} />;
+    return <Bedtime child={child} dayKey={dayKey} onExit={() => setSub("stories")} />;
   } else if (sub === "printables") {
     // Child-safe: pictures and names only. Downloads are in the parent area.
     body = (
@@ -168,7 +168,7 @@ export function ChildApp({ child, onGrownUps, pendingCount }: { child: Child; on
         onDuas={() => setSub("duas")}
         onSurahs={() => setSub("surahs")}
         onStories={() => setSub("stories")}
-        onBedtime={() => setSub("bedtime")}
+        
         simFriday={simFriday}
         onSimFriday={toggleSimFriday}
       />
@@ -362,11 +362,10 @@ function HomeTab(props: {
       <SectionHeader title="Explore" />
       <div className="grid2">
         <Banner tone="gold" art="palms-up" title="Dua Corner" sub="Learn a dua" onClick={() => props.onSub("duas")} />
-        <Banner tone="purple" art="books" title="Stories" sub="Prophet stories" onClick={() => props.onSub("stories")} />
+        <Banner tone="purple" art="books" title="Stories" sub="Prophets, bedtime and more" onClick={() => props.onSub("stories")} />
         <Banner tone="teal" art="book" title="Short Surahs" sub="Listen and repeat" onClick={() => props.onSub("surahs")} />
         <Banner tone="blue" art="puzzle" title="Play & Learn" sub="Quiz and games" onClick={() => props.onTab("play")} />
       </div>
-      <Banner tone="night" art="night" title="Bedtime" sub="A story and bedtime duas" wide onClick={() => props.onSub("bedtime")} />
       <Banner tone="orange" art="clipboard" title="Printables" sub="Charts to colour in" wide onClick={() => props.onSub("printables")} />
 
       <ThemeCard dayKey={props.dayKey} activities={props.activities} completions={props.completions} onOpen={props.onOpen} />
@@ -726,7 +725,6 @@ function MeTab(props: {
   onDuas: () => void;
   onSurahs: () => void;
   onStories: () => void;
-  onBedtime: () => void;
   simFriday: boolean;
   onSimFriday: (v: boolean) => void;
 }) {
@@ -748,7 +746,6 @@ function MeTab(props: {
         <button className="action" onClick={props.onDuas}><Art name="palms-up" size={34} />My Duas</button>
         <button className="action" onClick={props.onSurahs}><Art name="book" size={34} />My Surahs</button>
         <button className="action" onClick={props.onStories}><Art name="books" size={34} />Stories</button>
-        <button className="action" onClick={props.onBedtime}><Art name="bed" size={34} />Bedtime</button>
       </div>
       <ThemeSwitch />
       {testerToolsEnabled && (

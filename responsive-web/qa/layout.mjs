@@ -110,7 +110,7 @@ for (const [w, h] of WIDTHS) {
   // Learning screens
   await tab("Home").click();
   await page.getByRole("button", { name: /Dua Corner/ }).first().click();
-  await page.getByRole("heading", { name: /Dua/ }).first().waitFor();
+  await page.locator(".banner-title", { hasText: "Dua Corner" }).waitFor();
   await noOverflow("dua corner");
   await shot("07-dua-corner");
   await page.getByRole("button", { name: "Back" }).first().click();
@@ -119,7 +119,7 @@ for (const [w, h] of WIDTHS) {
   await noOverflow("stories");
   await shot("08-stories");
   await tab("Play").click();
-  await page.getByRole("button", { name: /Kindness Quiz/ }).click();
+  await page.getByRole("button", { name: /^Quiz Kindness Quiz/ }).click();
   await page.locator(".option").first().waitFor();
   await noOverflow("quiz");
   await shot("09-quiz");

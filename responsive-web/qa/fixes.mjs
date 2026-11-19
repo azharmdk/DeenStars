@@ -55,8 +55,7 @@ for (const [w, h] of WIDTHS) {
   // ---------------- Fix 1: quiz scoring ----------------
   await step("quiz 3 of 4", async () => {
     await page.goto(`${BASE}/play`);
-    await page.locator(".guest-age button", { hasText: "5" }).click();
-    await page.getByRole("button", { name: /Kindness Quiz/ }).click();
+    await page.getByRole("button", { name: /^Quiz Kindness Quiz/ }).click();
     for (let q = 0; q < 4; q++) {
       await page.locator(".option").first().waitFor();
       const options = page.locator(".option");
@@ -94,14 +93,14 @@ for (const [w, h] of WIDTHS) {
 
   await step("matching", async () => {
     await page.goto(`${BASE}/play`);
-    await page.getByRole("button", { name: /Picture Matching/ }).click();
+    await page.getByRole("button", { name: /^Game Picture Matching/ }).click();
     await page.locator(".memory-card").first().waitFor();
     ok((await page.locator(".celebrate").count()) === 0, "matching: no overlay");
   });
 
   // ---------------- Fix 2: stories ----------------
   await step("story page counts", async () => {
-    await page.goto(`${BASE}/stories`);
+    await page.goto(`${BASE}/stories/category/prophets`);
     await page.locator(".tile").first().waitFor();
     for (const [title, pages] of [["Yunus", 7], ["Nuh", 6]]) {
       const card = page.locator(".tile", { hasText: title });
@@ -109,7 +108,7 @@ for (const [w, h] of WIDTHS) {
       await card.click();
       await page.getByText(new RegExp(`^1 / ${pages}$`)).waitFor();
       ok(true, `${title} reader has ${pages} pages`);
-      await page.goto(`${BASE}/stories`);
+      await page.goto(`${BASE}/stories/category/prophets`);
       await page.locator(".tile").first().waitFor();
     }
     await bannerShown("stories");
@@ -133,7 +132,7 @@ for (const [w, h] of WIDTHS) {
   });
 
   await step("nuh verse order", async () => {
-    await page.goto(`${BASE}/stories`);
+    await page.goto(`${BASE}/stories/category/prophets`);
     await page.locator(".tile", { hasText: "Nuh" }).click();
     await page.getByRole("button", { name: /Read the verses/ }).click();
     const keys = (await page.locator(".band-pill").allInnerTexts()).map((r) => r.match(/(\d+:\d+)$/)?.[1]).filter(Boolean);
@@ -143,26 +142,35 @@ for (const [w, h] of WIDTHS) {
 
   // ---------------- Fix 2: duas ----------------
   await step("dua transliterations", async () => {
+    // Walk every group. Duas with a short version (before eating) show it instead of the long text.
     await page.goto(`${BASE}/duas`);
-    await page.locator(".list-item").first().waitFor();
-    const n = await page.locator(".list-item").count();
-    let withTranslit = 0;
-    for (let k = 0; k < n; k++) {
-      await page.locator(".list-item").nth(k).click();
-      await page.locator(".arabic-text").first().waitFor();
-      if (await page.locator(".transliteration").first().isVisible().catch(() => false)) withTranslit++;
-      await noArchaic(`dua ${k + 1}`);
-      await bannerShown(`dua ${k + 1}`);
-      if (k === 0) await page.screenshot({ path: `qa/shots/${w}-fixes-dua-sleep.png`, fullPage: true });
-      await page.getByRole("button", { name: "Dua Corner" }).click();
-      await page.locator(".list-item").first().waitFor();
+    await page.locator(".dua-cat").first().waitFor();
+    const groups = await page.locator(".dua-cat .strong").allInnerTexts();
+    let n = 0, withTranslit = 0, shortVersion = 0;
+    for (const g of groups) {
+      await page.goto(`${BASE}/duas`);
+      await page.getByRole("button", { name: new RegExp(g.replace("&", "&")) }).click();
+      const items = page.locator(".list-item");
+      if (!(await items.first().waitFor({ timeout: 4000 }).then(() => true, () => false))) continue;
+      const count = await items.count();
+      for (let k = 0; k < count; k++) {
+        await items.nth(k).click();
+        await page.locator(".arabic-text").first().waitFor();
+        n++;
+        if (await page.locator(".transliteration").first().isVisible().catch(() => false)) withTranslit++;
+        else if (await page.getByText("If you forget at the start").count()) shortVersion++;
+        await noArchaic(`dua ${n}`);
+        await bannerShown(`dua ${n}`);
+        if (n === 1) await page.screenshot({ path: `qa/shots/${w}-fixes-dua-first.png`, fullPage: true });
+        await page.locator(".back-link").click();
+        await items.first().waitFor();
+      }
     }
-    ok(withTranslit === n, `every dua shows a transliteration (${withTranslit} of ${n})`);
-    await page.getByText("What to say before sleeping").first().click();
+    ok(n > 10 && withTranslit + shortVersion === n && shortVersion === 1, `every dua shows a transliteration, except the short before-eating version (${withTranslit} + ${shortVersion} of ${n})`);
+    await page.goto(`${BASE}/duas/before-sleeping`);
+    await page.locator(".arabic-text").first().waitFor();
     ok(await page.getByText("Bismikal-lahumma amootu wa-ahya.").isVisible(), "sleeping dua transliteration from Hisn al-Muslim");
-  });
-
-  // ---------------- Fix 2: surahs ----------------
+  });  // ---------------- Fix 2: surahs ----------------
   await step("surah bismillah and translation", async () => {
     await page.goto(`${BASE}/surahs`);
     await page.locator(".list-item").first().waitFor();

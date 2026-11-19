@@ -92,6 +92,7 @@ for (const [w, h] of WIDTHS) {
     await tab("Home").click();
     await page.getByRole("button", { name: /Stories/ }).first().click();
     await page.locator(".tile").first().click();
+    await page.locator(".tile").first().click();
     let guard = 0;
     while ((await page.getByRole("button", { name: /Next/ }).isEnabled()) && guard++ < 12) await page.getByRole("button", { name: /Next/ }).click();
     ok(await visible(page.getByText("What we learn")), "story: last page shows the verse and lesson");
@@ -102,23 +103,28 @@ for (const [w, h] of WIDTHS) {
   });
 
   await step("bedtime", async () => {
-    await page.getByRole("button", { name: /Bedtime/ }).first().click();
+    await page.getByRole("button", { name: /Stories/ }).first().click();
+    await page.getByRole("button", { name: /Bedtime Stories/ }).click();
+    await page.getByRole("button", { name: /Start bedtime routine/ }).click();
     await page.getByRole("heading", { name: /^Bedtime, / }).waitFor();
     await page.getByRole("button", { name: "Go straight to bedtime duas" }).click();
     await page.locator(".night .card").first().waitFor();
     await page.getByRole("button", { name: "Goodnight" }).click();
     ok(await visible(page.getByRole("heading", { name: /^Goodnight, / })), "bedtime: reaches goodnight");
     await page.getByRole("button", { name: "Close" }).click();
+    await page.getByRole("button", { name: "Back" }).first().click();
     await page.getByText("Today's deed").waitFor();
   });
 
   await step("learning progress", async () => {
     await page.getByRole("button", { name: /Dua Corner/ }).first().click();
+    await page.locator(".dua-cat").first().click();
     await page.locator(".list-item").first().click();
     await page.getByRole("group", { name: "Learning progress" }).getByRole("button", { name: "Learning" }).click();
     await page.waitForFunction(() => document.querySelector('[aria-label="Learning progress"] button[aria-pressed="true"]')?.textContent === "Learning", null, { timeout: 15000 });
     ok(true, "dua: progress saved as Learning");
-    await page.getByRole("button", { name: "Dua Corner" }).click();
+    await page.locator(".back-link").click();
+    await page.locator(".back-link").click();
     await page.getByRole("button", { name: "Back" }).first().click();
   });
 

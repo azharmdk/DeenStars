@@ -71,13 +71,14 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
     await page.goto(`${BASE}/duas/before-sleeping`);
     await page.locator(".arabic-text").first().waitFor();
     ok(await page.getByRole("heading", { name: "What to say before sleeping" }).isVisible(), "/duas/before-sleeping opens that dua directly");
-    await page.getByRole("button", { name: "Dua Corner" }).click();
-    await page.waitForURL(/\/duas$/);
+    await page.locator(".back-link").click();
+    await page.waitForURL(/\/duas\/category\/sleep$/);
+    await page.goto(`${BASE}/duas/category/morning`);
     await page.locator(".list-item", { hasText: "when you wake up" }).first().click();
     await page.waitForURL(/\/duas\/waking-up$/);
     ok(true, "opening a dua changes the URL");
     await page.goBack();
-    await page.waitForURL(/\/duas$/);
+    await page.waitForURL(/\/duas\/category\/morning$/);
     ok(await page.locator(".list-item").first().isVisible(), "browser back returns to the dua list");
     await page.goto(`${BASE}/surahs/al-ikhlaas`);
     await page.getByRole("heading", { name: "Surah Al-Ikhlaas" }).waitFor();
@@ -125,7 +126,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
     ok(await page.evaluate(() => window.__installPrompted === true), "Install opens the browser's install dialog");
     ok((await prompt.count()) === 0, "prompt goes away after installing");
     await page.goto(`${BASE}/duas`);
-    await page.locator(".list-item").first().waitFor();
+    await page.locator(".dua-cat").first().waitFor();
     ok((await page.locator(".install-prompt").count()) === 0, "no install prompt on children's pages");
   });
   await run(w, h, async (page, ok) => {
@@ -146,10 +147,10 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   // ---------- game levels (guest) ----------
   await run(w, h, async (page, ok) => {
     await page.goto(`${BASE}/play`);
-    await page.getByRole("button", { name: /Kindness Quiz/ }).waitFor();
+    await page.getByRole("button", { name: /^Quiz Kindness Quiz/ }).waitFor();
     const quizLevels = page.getByRole("group", { name: "Quiz level" });
     ok(await quizLevels.getByRole("button", { name: /Standard/ }).isDisabled(), "Standard locked before Gentle is finished");
-    await page.getByRole("button", { name: /Kindness Quiz/ }).click();
+    await page.getByRole("button", { name: /^Quiz Kindness Quiz/ }).click();
     await page.locator(".option").first().waitFor();
     ok((await page.locator(".dots span").count()) === 4 && (await page.locator(".option").count()) === 2, "Gentle: 4 questions, 2 choices");
     await playQuiz(page);
@@ -167,7 +168,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
     const matchLevels = page.getByRole("group", { name: "Matching level" });
     ok(await matchLevels.getByRole("button", { name: /Level 2/ }).isDisabled(), "matching Level 2 locked at first");
     ok(await matchLevels.getByRole("button", { name: /Super Matching/ }).isDisabled(), "Super Matching locked without a streak");
-    await page.getByRole("button", { name: /Picture Matching/ }).click();
+    await page.getByRole("button", { name: /^Game Picture Matching/ }).click();
     ok((await page.locator(".memory-card").count()) === 8, "Level 1: 4 pairs");
     await solveMatching(page);
     ok(/Time \d+:\d\d · Best \d+:\d\d/.test(await page.locator(".match-time").innerText()), "time and best time shown");
@@ -175,7 +176,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
     ok(best === 1, "best time kept on this device only");
     await page.getByRole("button", { name: "Back" }).first().click();
     await matchLevels.getByRole("button", { name: /Level 2/ }).click();
-    await page.getByRole("button", { name: /Picture Matching/ }).click();
+    await page.getByRole("button", { name: /^Game Picture Matching/ }).click();
     ok((await page.locator(".memory-card").count()) === 12, "Level 2: 6 pairs");
     await page.screenshot({ path: `qa/shots/${w}-enh-matching-l2.png` });
   });
@@ -207,7 +208,7 @@ await run(1440, 900, async (page, ok) => {
   const sm = page.getByRole("group", { name: "Matching level" }).getByRole("button", { name: /Super Matching/ });
   ok(await sm.isEnabled(), "Super Matching unlocked by the streak");
   await sm.click();
-  await page.getByRole("button", { name: /Picture Matching/ }).click();
+  await page.getByRole("button", { name: /^Game Picture Matching/ }).click();
   ok((await page.locator(".memory-card").count()) === 16, "Super Matching: 8 pairs");
   await page.screenshot({ path: "qa/shots/1440-enh-super-matching.png" });
   await page.getByRole("button", { name: "Back" }).first().click();

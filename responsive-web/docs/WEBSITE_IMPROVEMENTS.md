@@ -46,3 +46,25 @@ Scope: `responsive-web/` only. Items are delivered one at a time. Each entry lis
 - *Day key.* The daily challenge uses the browser's time zone. The rules say reward day logic is server-side, so this must move to the server when rewards are added.
 
 **Tests.** `test/play-learn.test.ts` (23 tests: levels, rounds always have one masjid, unlock rules, deterministic daily game, streak shown only while active, replays do not extend it). Browser: `node qa/play.mjs` (89 checks at 360, 768 and 1440 px, including finishing the daily challenge with a fixed clock).
+## 5 and 6. Stories simplified, Bedtime merged into Stories (done)
+
+**UX.** `/stories` shows six groups: Prophets, Good Character, Islamic Values, Bedtime Stories, Ramadan, Hajj & Umrah. There is no age filter, age picker or age subtitle. A note is shown: "If you are younger, ask your mother or father to help you read." Each group opens its own page. Groups with no reviewed stories (Good Character, Islamic Values, Ramadan, Hajj & Umrah) show "Coming soon" and a way back. The Bedtime Stories page has a "Start bedtime routine" button (a story, then bedtime duas, then goodnight).
+
+**Navigation.** The Bedtime item is removed from the header, the menu, the home tiles and the signed-in app (banner and profile button). The signed-in Friday story now draws from all stories, not one age band.
+
+**Routes.**
+| Route | Change |
+|---|---|
+| `/stories` | now the group landing page |
+| `/stories/category/<group>` | added |
+| `/stories/category/bedtime/routine` | added (replaces `/bedtime`) |
+| `/stories/<id>` | unchanged |
+| `/bedtime` | removed, redirects to `/stories/category/bedtime` so shared links keep working |
+
+**Schema.** `stories/{id}` gains `categories: string[]`. If it is missing, the story counts as `["prophets"]`, so old data still works. `ageBand` stays in the data and the publish gate but is no longer used for display or filtering. No rules or index changes.
+
+**Content.** The mapping is in `functions/src/seed/packs/story-categories.json`. All six stories are in Prophets. Sulaiman and the Little Ant, Baby Musa and the River, and Prophet Adam are also in Bedtime Stories. This bedtime selection is a developer proposal for gentle stories and needs reviewer confirmation. No new stories were written. Hajj & Umrah, Ramadan, Good Character and Islamic Values need reviewed stories before they can be filled. A reviewer may want to list "Building the Kaaba" under Hajj & Umrah.
+
+**Migration.** Re-seed the `stories` collection so documents get `categories` (emulator: `node functions/scripts/seed-emulator.mjs`; dev project: run the content import). Until then every story shows under Prophets and Bedtime Stories shows "Coming soon".
+
+**Tests.** `npm test` (`test/stories.test.ts`). Browser: `node qa/stories.mjs` (81 checks at 360, 768 and 1440 px). The older QA scripts (`guest`, `layout`, `fixes`, `fix3`, `sponsors`, `enhancements`, `flows`) were updated for the new Dua Corner, Play & Learn and Stories pages. `qa/flows.mjs` still has failing steps (make-up and learning confirm, delete child, settings and sign out) that also fail on the commit before these changes.

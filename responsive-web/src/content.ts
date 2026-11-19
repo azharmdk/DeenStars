@@ -84,3 +84,25 @@ export const DUA_BROWSE: DuaBrowseCategory[] = [
   { id: "sleep", label: "Sleep Duas", blurb: "Bedtime", art: "bed", from: ["sleep"] },
   { id: "quran", label: "Duas from the Quran", blurb: "Words from the Quran", art: "palms-up", from: ["rabbana"] },
 ];
+
+/** Story groups on the Stories page. A story can be in more than one. No age filtering. */
+export interface StoryCategory {
+  id: string;
+  label: string;
+  blurb: string;
+  art: "glowing-star" | "sparkling-heart" | "bulb" | "night" | "moon" | "mosque";
+}
+export const STORY_CATEGORIES: StoryCategory[] = [
+  { id: "prophets", label: "Prophets", blurb: "Stories of the Prophets", art: "glowing-star" },
+  { id: "good-character", label: "Good Character", blurb: "Kindness and good manners", art: "sparkling-heart" },
+  { id: "islamic-values", label: "Islamic Values", blurb: "What we learn and live by", art: "bulb" },
+  { id: "bedtime", label: "Bedtime Stories", blurb: "Calm stories for sleepy time", art: "night" },
+  { id: "ramadan", label: "Ramadan", blurb: "The special month", art: "moon" },
+  { id: "hajj-umrah", label: "Hajj & Umrah", blurb: "The journey to Makkah", art: "mosque" },
+];
+export function storyCategoriesOf(s: { categories?: string[] }): string[] {
+  return s.categories && s.categories.length > 0 ? s.categories : ["prophets"];
+}
+export function storiesIn<T extends { categories?: string[] }>(items: T[], categoryId: string): T[] {
+  return items.filter((s) => storyCategoriesOf(s).includes(categoryId));
+}

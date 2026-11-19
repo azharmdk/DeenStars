@@ -126,6 +126,8 @@ export interface Story {
   title: string;
   prophet: string;
   ageBand: AgeBand;
+  /** Website groups the story appears under. Missing means ["prophets"]. Not an age filter. */
+  categories?: string[];
   coverScene: string;
   scenes: { scene: string; refs: string[]; text: string }[];
   lesson: string;

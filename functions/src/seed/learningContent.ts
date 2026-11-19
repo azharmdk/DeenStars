@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Builds Dua Corner, Surah learning, stories and bedtime documents from the imported source packs
  * (scripts/import-content.mjs, docs/ISLAMIC_CONTENT_POLICY.md Â§11). Arabic text and audio come only
  * from the packs; nothing here is typed by hand.
@@ -7,6 +7,7 @@
 import quran from "./packs/quran.json";
 import duas from "./packs/duas.json";
 import duaOverrides from "./packs/dua-overrides.json";
+import storyCategories from "./packs/story-categories.json";
 import surahs from "./packs/surahs.json";
 import stories from "./packs/stories.json";
 
@@ -89,6 +90,7 @@ export function buildSurahLibrary() {
 }
 
 export function buildStories() {
+  const cats = storyCategories as unknown as Record<string, string[]>;
   return stories.map((s, i) => {
     const v = ayah(s.verse.ref);
     const refs = Array.from(new Set(s.scenes.flatMap((sc) => sc.refs))).sort(compareRefs);
@@ -115,6 +117,7 @@ export function buildStories() {
             return [r, { surahName: a.surahName, ayahNumber: a.ayahNumber, arabic: a.arabic, translation: a.translation }];
           }),
         ),
+        categories: cats[s.storyId] ?? ["prophets"],
         draftOrigin: "ai-assisted",
         sortOrder: i,
         ...REVIEW,

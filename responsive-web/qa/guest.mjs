@@ -42,13 +42,16 @@ for (const [w, h] of WIDTHS) {
     await shot("00-landing");
 
     // Duas
-    await go("Duas");
+    await go("Dua Corner");
     await page.waitForURL(/\/duas$/);
-    await page.locator(".list-item").first().waitFor();
-    ok((await page.locator(".list-item").count()) > 3, "duas: library loads for guests");
+    await page.locator(".dua-cat").first().waitFor();
+    ok((await page.locator(".dua-cat").count()) >= 6, "duas: groups load for guests");
     await noPartners("duas");
     await overflow("duas");
     await shot("01-duas");
+    await page.getByRole("button", { name: /Sleep Duas/ }).click();
+    await page.locator(".list-item").first().waitFor();
+    ok((await page.locator(".list-item").count()) >= 1, "duas: sleep group lists duas");
     await page.locator(".list-item").first().click();
     await page.locator(".arabic-text").first().waitFor();
     ok((await page.getByText("How am I doing?").count()) === 0, "dua detail: no progress controls for guests");
@@ -65,57 +68,52 @@ for (const [w, h] of WIDTHS) {
     await overflow("surah detail");
     await shot("02-surah");
 
-    // Stories, age bar, deep link, browser back
+    // Stories: groups, deep link, browser back
     await go("Stories");
     await page.waitForURL(/\/stories$/);
-    await page.locator(".guest-age").waitFor();
-    await page.locator(".tile").first().waitFor();
-    const little = await page.locator(".tile").count();
-    await page.locator('.guest-age button', { hasText: "6" }).click();
-    await page.waitForTimeout(200);
-    ok(await page.getByText("Young Explorers").first().isVisible(), "stories: age 6 shows Young Explorers");
-    await page.locator('.guest-age button', { hasText: "5" }).click();
-    ok((await page.locator(".tile").count()) === little, "stories: back to age 5 list");
+    await page.locator(".dua-cat").first().waitFor();
+    ok((await page.locator(".guest-age").count()) === 0, "stories: no age bar");
+    ok((await page.locator(".dua-cat").count()) === 6, "stories: six groups");
     await overflow("stories");
     await shot("03-stories");
+    await page.getByRole("button", { name: /Prophets/ }).click();
+    await page.waitForURL(/\/stories\/category\/prophets$/);
+    await page.locator(".tile").first().waitFor();
     await page.locator(".tile").first().click();
-    await page.waitForURL(/\/stories\/.+/);
+    await page.waitForURL(/\/stories\/story_.+/);
     const storyUrl = page.url();
     await page.getByRole("button", { name: /Next/ }).click();
     ok(await page.getByText(/2 \/ \d+/).isVisible(), "story reader: next page works");
     await page.goBack();
-    await page.waitForURL(/\/stories$/);
-    ok(await page.locator(".guest-age").isVisible(), "browser back returns to the story list");
+    await page.waitForURL(/\/stories\/category\/prophets$/);
+    ok(await page.locator(".tile").first().isVisible(), "browser back returns to the story group");
     await page.goto(storyUrl);
     await page.getByRole("button", { name: /Next/ }).waitFor();
     ok(true, "story deep link loads directly");
-    await noPartners("story");
-
-    // Play
+    await noPartners("story");    // Play
     await go("Play & Learn");
     await page.waitForURL(/\/play$/);
-    await page.getByRole("button", { name: /Kindness Quiz/ }).click();
+    await page.getByRole("button", { name: /^Quiz Kindness Quiz/ }).click();
     await page.locator(".option").first().waitFor();
     ok((await page.locator(".option").count()) === 2, "quiz: guests start at Gentle (2 choices)");
     await page.locator(".option").first().click();
     await overflow("quiz");
     await page.getByRole("button", { name: "Close quiz" }).click();
-    await page.getByRole("button", { name: /Picture Matching/ }).click();
+    await page.getByRole("button", { name: /^Game Picture Matching/ }).click();
     await page.locator(".memory-card").first().waitFor();
     ok((await page.locator(".memory-card").count()) === 8, "matching: level 1 shows 4 pairs");
     await noPartners("play");
 
-    // Bedtime
-    await page.goto(`${BASE}/bedtime`);
+    // Bedtime Stories and the routine
+    await page.goto(`${BASE}/stories/category/bedtime`);
+    await page.getByRole("button", { name: /Start bedtime routine/ }).click();
     await page.getByRole("heading", { name: "Bedtime, little one" }).waitFor();
     await page.getByRole("button", { name: "Go straight to bedtime duas" }).click();
     await page.getByRole("heading", { name: "Bedtime duas" }).waitFor();
     ok(await page.locator(".night .card").first().waitFor({ timeout: 15000 }).then(() => true, () => false), "bedtime: duas load for guests");
     await overflow("bedtime");
     await page.getByRole("button", { name: "Leave bedtime" }).click();
-    await page.waitForURL(`${BASE}/`);
-
-    // Sign-in still works from the website
+    await page.waitForURL(/\/stories\/category\/bedtime$/);    // Sign-in still works from the website
     if (w === 1440) {
       await page.getByRole("link", { name: "Sign in" }).first().click();
       await page.waitForURL(/\/signin$/);

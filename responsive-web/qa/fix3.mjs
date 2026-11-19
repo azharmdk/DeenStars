@@ -170,7 +170,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   await step("matching size", async () => {
     await tab("Play").click();
-    await page.getByRole("button", { name: /Picture Matching/ }).click();
+    await page.getByRole("button", { name: /^Game Picture Matching/ }).click();
     const card = page.locator(".memory-card").first();
     await card.waitFor();
     const box = await card.boundingBox();
@@ -183,6 +183,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await step("story caption", async () => {
     await tab("Home").click();
     await page.getByRole("button", { name: /Stories/ }).first().click();
+    await page.locator(".tile").first().click();
     await page.locator(".tile").first().click();
     const panel = await page.locator(".story-panel").boundingBox();
     const cap = await page.locator(".caption").boundingBox();

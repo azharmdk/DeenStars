@@ -1,0 +1,9 @@
+{
+  "_note": "Which website category each story is shown under. A story can be in more than one. 'prophets' is the default. The 'bedtime' list is a PROPOSAL by the developer (gentler stories first) and must be confirmed by the content reviewer. Categories with no stories (good-character, islamic-values, ramadan, hajj-umrah) are shown as 'Coming soon' until reviewed stories exist.",
+  "story_nuh_ship": ["prophets"],
+  "story_sulaiman_ant": ["prophets", "bedtime"],
+  "story_yunus_fish": ["prophets"],
+  "story_musa_river": ["prophets", "bedtime"],
+  "story_ibrahim_kaaba": ["prophets"],
+  "story_adam_first": ["prophets", "bedtime"]
+}

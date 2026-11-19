@@ -11,7 +11,6 @@ export const SITE_LINKS: { to: string; label: string }[] = [
   { to: "/duas", label: "Dua Corner" },
   { to: "/surahs", label: "Surahs" },
   { to: "/stories", label: "Stories" },
-  { to: "/bedtime", label: "Bedtime" },
   { to: "/play", label: "Play & Learn" },
   { to: "/printables", label: "Printables" },
 ];
@@ -104,8 +103,7 @@ export function SiteFrame({ children, kids = false, signedIn = false }: { childr
 const FEATURES: { art: ArtName; title: string; text: string; tone: string; to: string; account?: boolean }[] = [
   { art: "palms-up", title: "Dua Corner", text: "Learn a dua.", tone: "gold", to: "/duas" },
   { art: "book", title: "Short Surahs", text: "Listen and repeat.", tone: "teal", to: "/surahs" },
-  { art: "books", title: "Stories", text: "Prophet stories.", tone: "purple", to: "/stories" },
-  { art: "night", title: "Bedtime", text: "A story and bedtime duas.", tone: "night", to: "/bedtime" },
+  { art: "books", title: "Stories", text: "Prophets, good character and bedtime.", tone: "purple", to: "/stories" },
   { art: "puzzle", title: "Play & Learn", text: "Quiz and games.", tone: "blue", to: "/play" },
   { art: "clipboard", title: "Free printables", text: "Charts and calendars to print at home.", tone: "orange", to: "/printables" },
   { art: "seedling", title: "Daily checklist", text: "Stars and days in a row. Free parent account.", tone: "green", to: "/register", account: true },

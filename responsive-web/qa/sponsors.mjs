@@ -51,15 +51,15 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   };
 
   await step("public pages", async () => {
-    for (const [path, sel] of [["/", ".landing-title"], ["/duas", ".list-item"], ["/duas/before-sleeping", ".arabic-text"], ["/surahs", ".list-item"], ["/stories", ".tile"], ["/play", ".banner"], ["/printables", ".printable-card"]]) {
+    for (const [path, sel] of [["/", ".landing-title"], ["/duas", ".dua-cat"], ["/duas/before-sleeping", ".arabic-text"], ["/surahs", ".list-item"], ["/stories", ".tile"], ["/play", ".banner"], ["/printables", ".printable-card"]]) {
       await page.goto(BASE + path);
       await page.locator(sel).first().waitFor();
       await page.waitForTimeout(400);
       await none(`website ${path}`);
     }
-    await page.goto(`${BASE}/bedtime`);
-    await page.getByRole("heading", { name: /Bedtime/ }).waitFor();
-    await none("website bedtime");
+    await page.goto(`${BASE}/stories/category/bedtime`);
+    await page.getByRole("button", { name: /Start bedtime routine/ }).waitFor();
+    await none("website bedtime stories");
   });
 
   await step("child screens", async () => {
@@ -85,10 +85,13 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
       await none(`child ${name}`);
       await page.getByRole("button", { name: "Back" }).first().click();
     }
-    await page.getByRole("button", { name: /Bedtime/ }).first().click();
+    await page.getByRole("button", { name: /Stories/ }).first().click();
+    await page.getByRole("button", { name: /Bedtime Stories/ }).click();
+    await page.getByRole("button", { name: /Start bedtime routine/ }).click();
     await page.getByRole("heading", { name: /^Bedtime, / }).waitFor();
     await none("child Bedtime mode");
     await page.getByRole("button", { name: "Leave bedtime" }).click();
+    await page.getByRole("button", { name: "Back" }).first().click();
   });
 
   await step("parent area", async () => {

@@ -1020,6 +1020,8 @@ a.printable-title:hover { color: var(--primary); text-decoration: underline; }
 .level-picker { flex-wrap: wrap; }
 .level-picker button { flex: 1 1 30%; white-space: nowrap; }
 
+.story-note { margin: 0; padding: 12px 16px; border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-ink); font-weight: 650; }
+
 /* Sponsor banners (Enhancement 5): plain static images, clearly labelled, parent area only. No motion. */
 .sponsors { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
 .sponsor-banner {
